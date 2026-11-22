@@ -5,7 +5,7 @@ is marked (esimv1) and is also noted there.
 
 ## The story (first)
 - [ ] README tells what a playable Sausalito is and what it would let a resident try.
-- [ ] `docs/sausalito.md`: what the town is deciding, who holds each lever, with sources. Check every row against a primary page.
+- [ ] A devlog entry on what the town is deciding, who holds each lever, with sources. Check every row against a primary page.
 - [ ] Choose the first question. Not chosen yet; it is Anselm's to choose.
 - [ ] Settle the term: "playable Sausalito", "playable place", or another.
 

@@ -17,8 +17,8 @@ sketch: a story, an essay and a chore list, with no simulation yet. Not deployed
 - Devlog: `devlog/` (dated entries; read the tail first).
 - Chores: `todo.md`. Engine chores marked (esimv1) are done in
   `~/projects/2026/earth-simulator-1`, which has its own room and rules.
-- Docs: `docs/` pages carry the stamp lines esimv1's docs use (author, ordered-by,
-  written, revised, revision).
+- Everything written goes in `devlog/` as dated entries; there is no `docs/` folder
+  (Anselm, 2026-11-22). An essay there keeps the stamp lines esimv1's docs use.
 - Deploy: none yet; see `project.toml`.
 
 ## Project-specific facts
@@ -30,5 +30,5 @@ sketch: a story, an essay and a chore list, with no simulation yet. Not deployed
 - The first question the model answers has not been chosen. Do not build the scenario
   ahead of Anselm's word on it (2026-11-22: "i don't want you to run ahead on the actual
   scenario").
-- `docs/a-town-and-its-playable-model.md` is a machine draft of an essay that is his to
+- `devlog/20261122-a-town-and-its-playable-model.md` is a machine draft of an essay that is his to
   rewrite.
