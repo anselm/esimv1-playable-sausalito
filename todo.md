@@ -4,8 +4,9 @@ Open work for this repository, one line each. Engine work that has to happen in 
 is marked (esimv1) and is also noted there.
 
 ## The story (first)
-- [ ] README tells what a playable Sausalito is and what it would let a resident try.
-- [ ] A devlog entry on what the town is deciding, who holds each lever, with sources. Check every row against a primary page.
+- [x] README tells what a playable Sausalito is and what it would let a resident try (first draft, 2026-11-22).
+- [ ] Check every row of `devlog/20261122-what-sausalito-is-deciding.md` against a primary page; most are search summaries.
+- [ ] A licence file.
 - [ ] Choose the first question. Not chosen yet; it is Anselm's to choose.
 - [ ] Settle the term: "playable Sausalito", "playable place", or another.
 
