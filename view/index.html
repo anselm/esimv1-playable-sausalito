@@ -38,7 +38,7 @@
 </div>
 <div id="credit" class="panel">Ground: US Geological Survey 3DEP one-metre lidar elevation, 2018 survey, drawn at 4 m.
   Trees: canopy height from lidar flown in 2018 (the eight-county canopy model, Tukman Geospatial and partners), one body per 7 m of canopy. Buildings, roads and piers: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.
-  <b>Building heights are placeholders</b> for all but <span id="tagged"></span> buildings. Clock time is Pacific Standard Time.</div>
+  Building heights: <span id="tagged"></span>. Clock time is Pacific Standard Time.</div>
 
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
 <script type="module">
@@ -240,7 +240,7 @@ const mk = (host, table, key, apply) => { for (const k in table) { const b = doc
 mk('looks', LOOKS, 'look', applyLook); mk('cams', CAMS, 'cam', applyCam)
 const dayIn = document.getElementById('day'), hourIn = document.getElementById('hour'); dayIn.value = state.day; hourIn.value = state.hour
 dayIn.oninput = () => { state.day = +dayIn.value; applySun() }; hourIn.oninput = () => { state.hour = +hourIn.value; applySun() }
-document.getElementById('tagged').textContent = `${town.heights_tagged} of ${town.buildings.length}`
+{ const n = town.buildings.length, ms = town.heights_microsoft || 0, tg = town.heights_tagged; document.getElementById('tagged').innerHTML = `${ms.toLocaleString()} are Microsoft's estimates (Global ML Building Footprints), ${tg} are OpenStreetMap tags, and <b>${(n - ms - tg).toLocaleString()} are placeholders</b>` }
 const treesOn = document.getElementById('treesOn'); if (q.get('trees') === '0') treesOn.checked = false
 if (trees) { trees.visible = treesOn.checked; document.getElementById('treeNote').textContent = `${treeRand.length.toLocaleString()} canopy tops from 2018 lidar`; treesOn.onchange = () => { trees.visible = treesOn.checked; renderer.shadowMap.needsUpdate = true; dirty = true } }
 else { treesOn.disabled = true; treesOn.checked = false; document.getElementById('treeNote').textContent = 'no canopy file' }

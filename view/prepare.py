@@ -7,8 +7,8 @@ Needs GDAL's command-line tools and numpy. Inputs (see cache/README.md for where
 Outputs:
   data/ground.bin   elevation, little-endian int16 decimetres, row-major from the north edge
   data/town.json    the window, buildings, roads and piers in metres east and north of the window's south-west corner
-Heights: a building's height is its OpenStreetMap `height` or `building:levels` x 3 m where tagged; otherwise a
-placeholder by kind. About 40 of 4,455 buildings are tagged, so nearly every height in the view is a placeholder.
+Heights: a building's height is its OpenStreetMap `height` or `building:levels` x 3 m where tagged (t = 1), else
+Microsoft's estimate for the footprint at the same place (t = 2), else a placeholder by kind (t = 0).
 """
 import json, subprocess, sys, os
 import numpy as np
@@ -59,8 +59,50 @@ for e in ways:
         buildings.append({"k": t["building"], "h": round(h, 1), "t": 1 if known else 0, "p": xy[:-1] if xy[0] == xy[-1] else xy})
     elif "highway" in t: roads.append({"k": t["highway"], "n": t.get("name", ""), "p": xy})
     elif t.get("man_made") == "pier": piers.append({"area": xy[0] == xy[-1] and len(xy) > 3, "p": xy})
+# ---- heights from Microsoft's Global ML Building Footprints (CDLA Permissive 2.0) -----------------------------
+# cache/ms_qk023010203.csv.gz is the quadkey file covering the window (one GeoJSON feature per line, height in
+# metres, -1 where Microsoft has none; listed in its dataset-links.csv). Microsoft estimated these heights; the
+# method and date are not stated per building. An OpenStreetMap building takes the height of the Microsoft
+# footprint that contains its centre, or failing that the nearest one within 12 m.
+import gzip
+ms_path = os.path.join(CACHE, "ms_qk023010203.csv.gz"); from_ms = 0
+if os.path.exists(ms_path):
+    ms = []
+    for line in gzip.open(ms_path, "rt"):
+        f = json.loads(line); hgt = f["properties"].get("height", -1); ring = f["geometry"]["coordinates"][0]
+        if hgt is None or hgt <= 0: continue
+        lon, lat = ring[0]
+        if not (-122.52 <= lon <= -122.455 and 37.83 <= lat <= 37.885): continue
+        ms.append((hgt, ring))
+    pts = "\n".join(f"{x} {y}" for _, ring in ms for x, y in ring)
+    proj = iter(subprocess.run("gdaltransform -s_srs EPSG:4326 -t_srs EPSG:26910", shell=True, input=pts, capture_output=True, text=True, check=True).stdout.split("\n"))
+    polys = []
+    for hgt, ring in ms:
+        xy = []
+        for _ in ring: a = next(proj).split(); xy.append((float(a[0]) - E0, float(a[1]) - N0))
+        polys.append((hgt, xy, sum(p[0] for p in xy) / len(xy), sum(p[1] for p in xy) / len(xy)))
+    grid = {}
+    for i, (_, xy, cx, cy) in enumerate(polys): grid.setdefault((int(cx // 50), int(cy // 50)), []).append(i)
+    def inside(x, y, xy):
+        c = False; n = len(xy)
+        for i in range(n):
+            x1, y1 = xy[i]; x2, y2 = xy[(i + 1) % n]
+            if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1: c = not c
+        return c
+    for b in buildings:
+        if b["t"]: continue
+        cx = sum(p[0] for p in b["p"]) / len(b["p"]); cy = sum(p[1] for p in b["p"]) / len(b["p"])
+        near = [i for dx in (-1, 0, 1) for dy in (-1, 0, 1) for i in grid.get((int(cx // 50) + dx, int(cy // 50) + dy), [])]
+        hit = next((i for i in near if inside(cx, cy, polys[i][1])), None)
+        if hit is None and near:
+            j = min(near, key=lambda i: (polys[i][2] - cx) ** 2 + (polys[i][3] - cy) ** 2)
+            if (polys[j][2] - cx) ** 2 + (polys[j][3] - cy) ** 2 <= 144: hit = j
+        if hit is not None: b["h"] = round(float(polys[hit][0]), 1); b["t"] = 2; from_ms += 1
+    hs = sorted(b["h"] for b in buildings if b["t"] == 2)
+    print(f"heights: {from_ms} of {len(buildings)} from Microsoft ({len(polys)} Microsoft footprints with a height in the window); median {hs[len(hs)//2]} m, 95th percentile {hs[int(len(hs)*.95)]} m, tallest {hs[-1]} m")
+
 json.dump({"window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2)},
-           "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged,
+           "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged, "heights_microsoft": from_ms,
            "buildings": buildings, "roads": roads, "piers": piers}, open(os.path.join(OUT, "town.json"), "w"), separators=(",", ":"))
 print(f"ground {nx}x{ny} at {RES} m, water level {water:.2f} m; {len(buildings)} buildings ({tagged} with a tagged height), {len(roads)} roads, {len(piers)} piers")
 

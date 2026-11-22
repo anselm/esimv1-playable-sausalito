@@ -1,5 +1,7 @@
 # What Sausalito is deciding
 
+**Later the same day a second reading from primary pages corrected parts of this page: see `20261122-sausalito-from-primary-pages.md`.**
+
 22 November 2026. A first reading of the town, gathered in one sitting by a research
 agent (Claude Opus, web reading only) and written up by Claude (Fable 5.2). It is a list
 of leads for choosing what the model should address first. It is not a checked record.

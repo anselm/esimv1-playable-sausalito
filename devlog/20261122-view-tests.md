@@ -98,6 +98,20 @@ I know cesium may have 3d tiles. Surely there must be more data?"
   public domain), and Overture's building heights, some of which were derived from that lidar.
   Aerial photographs from the national programme (NAIP, public domain) could colour the ground.
 
+## Later again: building heights
+
+![Daylight, downtown, with estimated heights](img/20261122-heights-day-downtown.jpg)
+![Daylight, the Marinship, with estimated heights](img/20261122-heights-day-marinship.jpg)
+
+The second research pass found that Microsoft's Global ML Building Footprints carry a height
+for most buildings here, under a permissive licence (CDLA Permissive 2.0). `view/prepare.py`
+now gives each OpenStreetMap building the height of the Microsoft footprint at the same
+place: 3,355 of 4,216 buildings. 36 keep their OpenStreetMap tag and 825 are still
+placeholders, among them the houseboats. Microsoft's heights are estimates whose method and
+date are not stated per building; the median here is 6.0 m and the tallest 19.3 m. They have
+not been compared with the lidar. The building shadows are now roughly right in length and
+still not to be relied on for any one building.
+
 ## Open
 
 - Which look, or which mix of them.

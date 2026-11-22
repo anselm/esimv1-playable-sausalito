@@ -4,9 +4,10 @@ Open work for this repository, one line each. Engine work that has to happen in 
 is marked (esimv1) and is also noted there.
 
 ## Next, in order (Anselm's four, 2026-11-22)
-1. [ ] Research, second pass: read sausalito.gov with a real browser (it gave only menus to a plain fetch): council agendas and staff reports, the shoreline plan, the housing plan, the budget, the departments and who works on what. Keep a table of articles, media and data sets with licences.
+1. [x] Research, second pass, from primary pages: `devlog/20261122-sausalito-from-primary-pages.md`. Still open: the certified election result (25 November), who is mayor for 2027, the terms of the county's data, the older flood and subsidence studies.
 2. [x] View tests: three looks on real ground (`view/`, `devlog/20261122-view-tests.md`). Anselm to choose.
-   - [ ] Building heights from the lidar point cloud; nearly all are placeholders now.
+   - [x] Building heights: Microsoft's estimates for 3,355 of 4,216 buildings.
+   - [ ] Check those heights against the lidar point cloud; 825 buildings (houseboats among them) are still placeholders.
    - [x] Trees, from the 2018 canopy height model (its licence is not stated: find the terms before publishing the derived file).
    - [ ] A wider window; a try on a phone; aerial photographs on the ground.
 3. [ ] (esimv1) Run this repository as a project by path, with the engine version it needs named here. See the esimv1 devlog of 2026-11-22.
