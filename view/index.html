@@ -39,7 +39,7 @@
 </div>
 <div id="credit" class="panel">Ground: US Geological Survey 3DEP one-metre lidar elevation, 2018 survey, drawn at 4 m.
   Trees: whatever stands 3 m or more above the ground outside buildings in the same survey's points (US Geological Survey), one body per 7 m of canopy.
-  Buildings, roads and piers: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.
+  Roads are drawn as wide as their lanes on the map, or as their class usually is; bridges stand at the height the lidar saw. Buildings, roads and piers: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.
   Building heights: <span id="tagged"></span>. Clock time is Pacific Standard Time.
   Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. Ground below that level shows wet whether or not the bay can reach it; walls, drains and pumps are not in the picture. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation.</div>
 
@@ -62,7 +62,7 @@ const LOOKS = {
   day:   { name: 'Daylight', land: (e, s) => { const t = Math.min(1, Math.max(0, (e - 4) / 60)), u = Math.min(1, s * 2.2)
              const flat = [203,196,180], hill = [124,138,92], steep = [150,140,104]
              const h = hill.map((v, i) => v + (steep[i] - v) * u); return flat.map((v, i) => v + (h[i] - v) * t) },
-           water: [58,104,132], road: '#8f8d88', roadEdge: null, path: '#b9b2a2', pier: '#9b8a72',
+           water: [58,104,132], road: '#66686b', roadMinor: '#85857f', kerb: '#b4b1a8', marks: { edge: '#dcdcd6', lane: '#dcdcd6', centre: '#d2b24c' }, roadEdge: null, path: '#c4bca8', pier: '#9b8a72',
            wall: (r) => [0.90 + r * 0.06, 0.88 + r * 0.05, 0.82 + r * 0.04],
            roof: (r, k) => k === 'houseboat' ? [[0.55,0.42,0.33],[0.45,0.52,0.55],[0.62,0.58,0.50],[0.40,0.47,0.40]][Math.floor(r * 4) % 4]
                          : [[0.47,0.45,0.43],[0.58,0.40,0.32],[0.52,0.50,0.47],[0.38,0.37,0.36],[0.66,0.63,0.58]][Math.floor(r * 5) % 5],
@@ -115,7 +115,7 @@ const gGeo = new THREE.BufferGeometry()
     pos[p++] = X(x); pos[p++] = elev[j * nx + i]; pos[p++] = Z(y); uv[t++] = x / SX; uv[t++] = y / SY }
   for (let j = 0, k = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) { const a = j * nx + i; idx[k++] = a; idx[k++] = a + nx; idx[k++] = a + 1; idx[k++] = a + 1; idx[k++] = a + nx; idx[k++] = a + nx + 1 }
   gGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); gGeo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); gGeo.setIndex(new THREE.BufferAttribute(idx, 1)); gGeo.computeVertexNormals() }
-const TEX = 4096, paint = document.createElement('canvas'), rough = document.createElement('canvas'); paint.width = paint.height = rough.width = rough.height = TEX
+const TEX = renderer.capabilities.maxTextureSize >= 8192 && Math.min(innerWidth, innerHeight) > 700 && !q.has('small') ? 8192 : 4096, paint = document.createElement('canvas'), rough = document.createElement('canvas'); paint.width = paint.height = rough.width = rough.height = TEX
 const paintTex = new THREE.CanvasTexture(paint), roughTex = new THREE.CanvasTexture(rough)
 paintTex.colorSpace = THREE.SRGBColorSpace; paintTex.anisotropy = renderer.capabilities.getMaxAnisotropy()
 const gMat = new THREE.MeshStandardMaterial({ map: paintTex, roughnessMap: roughTex, roughness: 1, metalness: 0 })
@@ -157,10 +157,22 @@ function paintGround(L) {
     if (p.area) { c.fillStyle = L.pier; c.beginPath(); p.p.forEach((v, i) => { const [x, y] = px(v); i ? c.lineTo(x, y) : c.moveTo(x, y) }); c.fill(); r2.fillStyle = '#fff'; r2.beginPath(); p.p.forEach((v, i) => { const [x, y] = px(v); i ? r2.lineTo(x, y) : r2.moveTo(x, y) }); r2.fill() }
     else { line(p.p, 2.6, L.pier); line(p.p, 2.6, '#fff', r2) }
   }
-  const roads = town.roads.filter(r => ROAD_W[r.k]), paths = town.roads.filter(r => !ROAD_W[r.k] && r.k !== 'proposed' && r.k !== 'construction')
-  for (const r of paths) line(r.p, 1.6, L.path)
-  if (L.roadEdge) for (const r of roads) line(r.p, ROAD_W[r.k] + 2.4, L.roadEdge)
-  for (const r of roads) line(r.p, ROAD_W[r.k], L.road)
+  // roads, from OpenStreetMap: each as wide as its lanes say (3.4 m a lane and a shoulder) or as its class usually is;
+  // minor ones first so the larger lie over them. Tunnels are left out; bridges are lifted as meshes below.
+  const ORDER = ['track', 'service', 'unclassified', 'residential', 'tertiary', 'tertiary_link', 'secondary_link', 'secondary', 'primary_link', 'primary', 'trunk_link', 'trunk', 'motorway_link', 'motorway']
+  const widthOf = (r) => r.l ? r.l * 3.4 + (r.k.startsWith('motorway') ? 4 : 1.2) : (r.k === 'motorway' ? (r.o ? 15 : 26) : ROAD_W[r.k] ?? ROAD_W[r.k.replace('_link', '')] ?? 6)
+  const roads = town.roads.filter(r => ORDER.includes(r.k) && !r.u).sort((a, b) => ORDER.indexOf(a.k) - ORDER.indexOf(b.k)), paths = town.roads.filter(r => ['footway', 'path', 'cycleway', 'pedestrian', 'steps'].includes(r.k) && !r.u)
+  for (const r of paths) { if (r.k === 'steps') c.setLineDash([2 * s, 1.5 * s]); line(r.p, r.k === 'cycleway' || r.k === 'pedestrian' ? 2.6 : 1.6, L.path); c.setLineDash([]) }
+  const minor = (r) => r.k === 'service' || r.k === 'track'
+  if (L.roadEdge) for (const r of roads) line(r.p, widthOf(r) + 2.4, L.roadEdge)
+  if (L.kerb) for (const r of roads) if (!minor(r)) line(r.p, widthOf(r) + 2.2, L.kerb)                   // a pale edge: kerb, pavement, shoulder
+  for (const r of roads) { line(r.p, widthOf(r), minor(r) ? (L.roadMinor || L.road) : L.road); line(r.p, widthOf(r), minor(r) ? '#f4f4f4' : '#d6d6d6', r2) }
+  if (L.marks) for (const r of roads) {                                                                      // paint where a road is wide enough to have it
+    const w = widthOf(r)
+    if (r.k === 'motorway') { c.setLineDash([]); line(r.p, w - 1.6, L.marks.edge); line(r.p, w - 2.4, L.road); if ((r.l || 3) > 1) { c.setLineDash([3 * s, 9 * s]); c.lineCap = 'butt'; line(r.p, 0.5, L.marks.lane) } }
+    else if (!r.o && ['primary', 'secondary', 'tertiary'].includes(r.k) && w >= 7.5) { c.setLineDash([]); line(r.p, 0.55, L.marks.centre) }
+    c.setLineDash([])
+  }
   paintTex.needsUpdate = true; roughTex.needsUpdate = true
 }
 
@@ -210,6 +222,16 @@ const piers = new THREE.Mesh(new THREE.BufferGeometry(), pierMat); piers.castSha
       for (const k of [0, 1, 2, 0, 2, 3]) pos.push(X(c[k][0]), 0, Z(c[k][1])) }
   }
   piers.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); piers.geometry.computeVertexNormals() }
+// bridges: a ribbon at the deck's own height (lidar), with a darker underside, so the highway crosses the water and the roads under it
+const deckMat = new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0, side: THREE.DoubleSide })
+const decks = new THREE.Mesh(new THREE.BufferGeometry(), deckMat); decks.castShadow = true; decks.receiveShadow = true; scene.add(decks)
+{ const pos = []
+  for (const r of town.roads) { if (!r.z || !['motorway', 'motorway_link', 'trunk', 'primary', 'secondary', 'tertiary', 'residential', 'unclassified', 'service', 'primary_link', 'secondary_link'].includes(r.k)) continue
+    const w = (r.l ? r.l * 3.4 + (r.k.startsWith('motorway') ? 4 : 1.2) : r.k === 'motorway' ? (r.o ? 15 : 26) : ROAD_W[r.k] ?? 7) / 2
+    for (let i = 0; i + 1 < r.p.length; i++) { const a = r.p[i], b = r.p[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, ox = -dy / l * w, oy = dx / l * w, za = r.z[i] + 0.15, zb = r.z[i + 1] + 0.15
+      const c = [[a[0] + ox, a[1] + oy, za], [a[0] - ox, a[1] - oy, za], [b[0] - ox, b[1] - oy, zb], [b[0] + ox, b[1] + oy, zb]]
+      for (const k of [0, 1, 2, 0, 2, 3]) pos.push(X(c[k][0]), c[k][2], Z(c[k][1])) } }
+  decks.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); decks.geometry.computeVertexNormals() }
 function applyWater() {
   const level = Math.max(state.level, W.water_m + 0.1), lift = level - W.water_m           // never below the water the lidar saw
   water.set({ level_m: level, wind_ms: state.wind.speed_ms, wind_from_deg: state.wind.from_deg }); piers.position.y = level + 0.5
@@ -258,7 +280,7 @@ function applySun() {
   scene.background = new THREE.Color().setRGB(Math.max(0, sky[0]), Math.max(0, sky[1]), Math.max(0, sky[2]), THREE.SRGBColorSpace)
   const far = state.live && state.vis ? Math.min(26000, Math.max(2500, state.vis * 1.6)) : 26000
   scene.fog = new THREE.Fog(scene.background, far * 0.23, far)
-  pierMat.color.set(L.pier)
+  pierMat.color.set(L.pier); deckMat.color.set(L.road)
   water.set({ sunDir: s.dir, sunColor: sun.color.clone().multiplyScalar(day * (1 - 0.8 * cl)), sky: scene.background, color: new THREE.Color().setRGB(L.water[0] / 255, L.water[1] / 255, L.water[2] / 255, THREE.SRGBColorSpace).multiplyScalar(0.25 + 0.75 * day), calm: state.look === 'day' ? 0 : 0.8 })
   renderer.toneMappingExposure = L.exposure; renderer.shadowMap.needsUpdate = true; dirty = true
   const m = dayToDate(state.day); document.getElementById('dayo').textContent = m; document.getElementById('houro').textContent = clock(state.hour)

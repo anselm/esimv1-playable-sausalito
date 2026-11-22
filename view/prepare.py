@@ -58,7 +58,14 @@ for e in ways:
         if not known: h = PLACEHOLDER.get(t["building"], 6.5)
         tagged += known
         buildings.append({"k": t["building"], "h": round(h, 1), "t": 1 if known else 0, "p": xy[:-1] if xy[0] == xy[-1] else xy})
-    elif "highway" in t: roads.append({"k": t["highway"], "n": t.get("name", ""), "p": xy})
+    elif "highway" in t:
+        r = {"k": t["highway"], "n": t.get("name", ""), "p": xy}
+        ln = num(t.get("lanes"))
+        if ln: r["l"] = int(ln)                                   # lanes, where the map says
+        if t.get("oneway") == "yes": r["o"] = 1
+        if t.get("bridge") and t.get("bridge") != "no": r["b"] = 1
+        if t.get("tunnel") and t.get("tunnel") != "no": r["u"] = 1
+        roads.append(r)
     elif t.get("man_made") == "pier": piers.append({"area": xy[0] == xy[-1] and len(xy) > 3, "p": xy})
 # ---- heights from Microsoft's Global ML Building Footprints (CDLA Permissive 2.0) -----------------------------
 # cache/ms_qk023010203.csv.gz is the quadkey file covering the window (one GeoJSON feature per line, height in
@@ -145,6 +152,21 @@ if os.path.exists(dsm_path):
     left = [b for b in buildings if b["t"] != 3]
     print(f"  not measured: {len(left)} ({sum(b['k'] == 'houseboat' for b in left)} houseboats); of all {sum(b['k'] == 'houseboat' for b in buildings)} houseboats {sum(b['k'] == 'houseboat' and b['t'] == 3 for b in buildings)} measured")
 tagged = sum(b["t"] == 1 for b in buildings); from_ms = sum(b["t"] == 2 for b in buildings)
+
+# Bridge decks: a road the map calls a bridge is not on the bare ground. Its deck's height at each vertex is
+# read from the lidar's top surface (the median of the 5 m around the vertex), so the page can lift it.
+decks = 0
+if above is not None:
+    top1 = above + dem1
+    for r in roads:
+        if not r.get("b"): continue
+        z = []
+        for x, y in r["p"]:
+            c, rr = int(x), int(N1M - y)
+            w = top1[max(0, rr - 2):rr + 3, max(0, c - 2):c + 3]; w = w[np.isfinite(w)]
+            z.append(round(float(np.median(w)), 1) if len(w) else None)
+        if all(v is not None for v in z): r["z"] = z; decks += 1
+    print(f"bridges: {sum(1 for r in roads if r.get('b'))} road pieces are bridges, {decks} with a deck height from lidar; {sum(1 for r in roads if r.get('u'))} are tunnels")
 
 json.dump({"window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2), "anchor": WIN["anchor"]},
            "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged, "heights_microsoft": from_ms, "heights_lidar": from_lidar,
