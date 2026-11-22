@@ -7,7 +7,8 @@ is marked (esimv1) and is also noted there.
 1. [ ] Research, second pass: read sausalito.gov with a real browser (it gave only menus to a plain fetch): council agendas and staff reports, the shoreline plan, the housing plan, the budget, the departments and who works on what. Keep a table of articles, media and data sets with licences.
 2. [x] View tests: three looks on real ground (`view/`, `devlog/20261122-view-tests.md`). Anselm to choose.
    - [ ] Building heights from the lidar point cloud; nearly all are placeholders now.
-   - [ ] Trees; a wider window; a try on a phone.
+   - [x] Trees, from the 2018 canopy height model (its licence is not stated: find the terms before publishing the derived file).
+   - [ ] A wider window; a try on a phone; aerial photographs on the ground.
 3. [ ] (esimv1) Run this repository as a project by path, with the engine version it needs named here. See the esimv1 devlog of 2026-11-22.
 4. [ ] (esimv1) Object storage: a mirror of fetched sources first, baked runs second. Not needed until there are runs to publish or a second machine has to run a scenario.
 5. [ ] (esimv1) Runs in real time on the player's device (Anselm, 2026-11-22: "probably requires some re-architecting"). The seams it needs: a run that loads a prepared bundle and never touches disk or network, a kernel that can be stepped and handed events between steps, and results kept in memory. Build those natively first, then try a WebAssembly build of one small scenario.

@@ -63,3 +63,30 @@ json.dump({"window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "re
            "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged,
            "buildings": buildings, "roads": roads, "piers": piers}, open(os.path.join(OUT, "town.json"), "w"), separators=(",", ":"))
 print(f"ground {nx}x{ny} at {RES} m, water level {water:.2f} m; {len(buildings)} buildings ({tagged} with a tagged height), {len(roads)} roads, {len(piers)} piers")
+
+# ---- trees, from a canopy height model -------------------------------------------------------------------
+# cache/chm1.bin is 4500 x 4500 float32 at 1 m over the same window, heights in feet above ground, exported from
+# the eight-county canopy height service at zenith.cnr.berkeley.edu (Marin's part is from lidar flown in 2018).
+# In Marin it holds vegetation; buildings were classified out, so it cannot give building heights.
+# One tree per 7 m cell where the canopy's top is 3 m or more, placed at the highest point in the cell, away
+# from building footprints and water. This is a picture of the canopy, not an inventory of trees.
+chm_path = os.path.join(CACHE, "chm1.bin")
+if os.path.exists(chm_path):
+    N = 4500; c = np.fromfile(chm_path, dtype="<f4").reshape(N, N) * 0.3048
+    block = np.zeros((N, N), bool)
+    for b in buildings:                                    # footprints, grown by 2 m, as a mask
+        xs = [p[0] for p in b["p"]]; ys = [N - p[1] for p in b["p"]]
+        x0, x1, y0, y1 = int(max(0, min(xs) - 2)), int(min(N, max(xs) + 3)), int(max(0, min(ys) - 2)), int(min(N, max(ys) + 3))
+        if x1 > x0 and y1 > y0: block[y0:y1, x0:x1] = True
+    gfull = np.repeat(np.repeat(g, RES, axis=0), RES, axis=1)   # the 4 m ground at 1 m, for the water mask
+    block |= gfull <= water + 0.06
+    c[block] = 0
+    CELL = 7; n = N // CELL
+    v = c[: n * CELL, : n * CELL].reshape(n, CELL, n, CELL).transpose(0, 2, 1, 3).reshape(n, n, CELL * CELL)
+    arg = v.argmax(axis=2); top = v.max(axis=2)
+    jj, ii = np.nonzero(top >= 3.0)
+    px = ii * CELL + arg[jj, ii] % CELL + 0.5; py = jj * CELL + arg[jj, ii] // CELL + 0.5
+    h = np.minimum(top[jj, ii], 60.0)
+    out = np.stack([np.round(px * 10), np.round((N - py) * 10), np.round(h * 10)], axis=1).astype("<u2")   # x east, y north, height: decimetres
+    out.tofile(os.path.join(OUT, "trees.bin"))
+    print(f"trees {len(out)} (canopy 3 m or more), median height {np.median(h):.1f} m, tallest {h.max():.1f} m")

@@ -61,10 +61,42 @@ phone.
   100 MB each and a reader we do not have yet.
 - The bay is the survey's flattened water surface, a flat sheet at -0.3 m. There is no
   bathymetry, no tide and no wave.
-- No trees. On the hillside they are much of what a person sees.
+- Trees were missing in the first pass and were added later the same day (below).
 - The sun's position uses low-precision formulas and standard time all year. It has not
   been checked against an almanac.
 - The window cuts off the floating-home harbors to the north and most of Marin City.
+
+## Later the same day: trees, and a search for more data
+
+Anselm: "It's a shame we don't have tree data. Maybe there are gaussian splats of the area ...
+I know cesium may have 3d tiles. Surely there must be more data?"
+
+![Daylight with trees, downtown](img/20261122-trees-day-downtown.jpg)
+![Daylight with trees, from the hill](img/20261122-trees-day-hill.jpg)
+![Model with trees](img/20261122-trees-model-downtown.jpg)
+![Paper with trees, the Marinship](img/20261122-trees-paper-marinship.jpg)
+
+- **Trees are in.** A canopy height model at about one metre covers Marin, made from lidar
+  flown in 2018 and served from zenith.cnr.berkeley.edu (service `CHM_8COUNTY`; credited to
+  the Golden Gate National Parks Conservancy, OneTam, Tukman Geospatial and others). The view
+  draws one rounded body per 7 m of canopy that stands 3 m or more: 86,885 of them in the
+  window. It is a picture of the canopy, not a count of trees. The service states no licence,
+  so `view/data/trees.bin` is not in git; `view/prepare.py` rebuilds it from an export of the
+  service. Its terms have to be found before the file is published.
+- **It does not give building heights.** In Marin's part of that model the buildings were
+  removed: the median height inside a footprint is about 1 m.
+- **Marin County's own footprints** (4,700 in the window, against 4,216 from OpenStreetMap)
+  have fields for base and peak elevation, and both are empty for every building here. Most
+  outlines date from 2004 aerial photographs.
+- **Google's photorealistic 3D tiles** would show the town as photographed, through Cesium or
+  three.js. Google's terms forbid storing them, using them offline or deriving data from them,
+  and they need a paid key. They cannot be part of an open repository, and a simulation could
+  not read them. They could be a backdrop in a hosted page and nothing more.
+- **Gaussian splats.** A search found none of Sausalito that is published. One could be made
+  from a drone flight or from walking video, of a street or a harbor more readily than a town.
+- **Still to try for building heights:** the lidar point cloud itself (US Geological Survey,
+  public domain), and Overture's building heights, some of which were derived from that lidar.
+  Aerial photographs from the national programme (NAIP, public domain) could colour the ground.
 
 ## Open
 
