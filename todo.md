@@ -3,7 +3,14 @@
 Open work for this repository, one line each. Engine work that has to happen in esimv1
 is marked (esimv1) and is also noted there.
 
-## The story (first)
+## Next, in order (Anselm's four, 2026-11-22)
+1. [ ] Research, second pass: read sausalito.gov with a real browser (it gave only menus to a plain fetch): council agendas and staff reports, the shoreline plan, the housing plan, the budget, the departments and who works on what. Keep a table of articles, media and data sets with licences.
+2. [ ] View tests: the town as solid ground, buildings, water and sun, from one-metre lidar. No scenario needed. Two or three looks to choose from.
+3. [ ] (esimv1) Run this repository as a project by path, with the engine version it needs named here. See the esimv1 devlog of 2026-11-22.
+4. [ ] (esimv1) Object storage: a mirror of fetched sources first, baked runs second. Not needed until there are runs to publish or a second machine has to run a scenario.
+
+## The story
+
 - [x] README tells what a playable Sausalito is and what it would let a resident try (first draft, 2026-11-22).
 - [ ] Check every row of `devlog/20261122-what-sausalito-is-deciding.md` against a primary page; most are search summaries.
 - [ ] A licence file.
