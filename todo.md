@@ -7,8 +7,8 @@ is marked (esimv1) and is also noted there.
 1. [x] Research, second pass, from primary pages: `devlog/20261122-sausalito-from-primary-pages.md`. Still open: the certified election result (25 November), who is mayor for 2027, the terms of the county's data, the older flood and subsidence studies.
 2. [x] View tests: three looks on real ground (`view/`, `devlog/20261122-view-tests.md`). Anselm to choose.
    - [x] Building heights: Microsoft's estimates for 3,355 of 4,216 buildings.
-   - [ ] Check those heights against the lidar point cloud; 825 buildings (houseboats among them) are still placeholders.
-   - [x] Trees, from the 2018 canopy height model (its licence is not stated: find the terms before publishing the derived file).
+   - [x] Checked against the lidar and replaced by measurements (Microsoft's were 0.4 m low at the median).
+   - [x] Trees, now from the lidar points (public domain); the canopy model is no longer used.
    - [ ] A wider window; a try on a phone; aerial photographs on the ground.
 3. [ ] (esimv1) Run this repository as a project by path, with the engine version it needs named here. See the esimv1 devlog of 2026-11-22.
 4. [ ] (esimv1) Object storage: a mirror of fetched sources first, baked runs second. Not needed until there are runs to publish or a second machine has to run a scenario.
@@ -38,7 +38,8 @@ is marked (esimv1) and is also noted there.
 - [ ] A solid style: lit terrain, buildings as bodies, water, sun position by date and hour.
 - [ ] Decide what is copied from esimv1's viewer and what is imported.
 
-- [ ] A height-above-ground raster from the 2018 lidar point cloud (first returns less the bare ground). It would measure building heights, fill the 825 placeholders where the survey saw them, and give trees from a public-domain source, so the tree file could be committed. No splat: the survey has no colour.
+- [x] Heights and trees from the 2018 lidar points: 4,194 of 4,216 buildings measured, trees from a public-domain source and now committed. `devlog/20261122-reading-the-lidar.md`.
+- [ ] Roof shapes from the same points; a look at the 1,299 tree bodies over 45 m.
 - [x] Water that moves, at the tide gauge's level, with the wind and sky from live observations: `devlog/20261122-water-tide-and-sky.md`. `view/lib/{tide,sky,water}.js` are written to be shared.
 - [ ] A tide correction from San Francisco to Sausalito; fixed piers told apart from floating ones; a sea bed, so a low tide can be drawn.
 - [ ] (esimv1) Let the catalog list live feeds a page reads, and let a scenario add its own entries.

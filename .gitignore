@@ -2,4 +2,3 @@ node_modules/
 dist/
 .env
 cache/
-view/data/trees.bin

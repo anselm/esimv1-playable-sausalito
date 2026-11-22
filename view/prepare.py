@@ -101,34 +101,84 @@ if os.path.exists(ms_path):
     hs = sorted(b["h"] for b in buildings if b["t"] == 2)
     print(f"heights: {from_ms} of {len(buildings)} from Microsoft ({len(polys)} Microsoft footprints with a height in the window); median {hs[len(hs)//2]} m, 95th percentile {hs[int(len(hs)*.95)]} m, tallest {hs[-1]} m")
 
+# ---- heights measured from the lidar point cloud ----------------------------------------------------------
+# cache/dsm1.bin is the highest lidar return in each one-metre cell (view/tools/lidar_surface.py, from the
+# 2018 survey's points, US Geological Survey, public domain). Less the one-metre bare ground it is the height
+# of whatever stands there. A building's height is the median of that over the cells inside its footprint
+# that stand 2 m or more above the ground, when they are at least three tenths of the footprint; so a
+# pitched roof is drawn at about its mid-slope and a tree over one corner does not lift the box.
+# A footprint where the lidar saw nothing standing (built since 2018, or drawn off its true place) keeps
+# the height it had.
+N1M = E1 - E0; above = None; bmask = None; from_lidar = 0
+dsm_path = os.path.join(CACHE, "dsm1.bin")
+if os.path.exists(dsm_path):
+    if not os.path.exists(os.path.join(CACHE, "dem1.bin")):
+        sh(f"gdalwarp -q -overwrite -te {E0} {N0} {E1} {N1} -tr 1 1 -r bilinear -dstnodata -9999 -ot Float32 {' '.join(vrts)} dem1.tif")
+        sh("gdal_translate -q -of ENVI -ot Float32 dem1.tif dem1.bin")
+    dem1 = np.fromfile(os.path.join(CACHE, "dem1.bin"), dtype="<f4").reshape(N1M, N1M)
+    dem1 = np.where(dem1 < -1000, water, dem1)
+    above = np.fromfile(dsm_path, dtype="<f4").reshape(N1M, N1M) - dem1          # NaN where no return fell
+    bmask = np.zeros((N1M, N1M), bool); pairs = []
+    for b in buildings:
+        xs = np.array([q[0] for q in b["p"]]); ys = N1M - np.array([q[1] for q in b["p"]])     # rows count from the north edge
+        c0, c1, r0, r1 = int(max(0, np.floor(xs.min()))), int(min(N1M, np.ceil(xs.max()))), int(max(0, np.floor(ys.min()))), int(min(N1M, np.ceil(ys.max())))
+        if c1 <= c0 or r1 <= r0: continue
+        gx, gy = np.meshgrid(np.arange(c0, c1) + 0.5, np.arange(r0, r1) + 0.5); ins = np.zeros(gx.shape, bool)
+        for i in range(len(xs)):
+            x1, y1, x2, y2 = xs[i], ys[i], xs[(i + 1) % len(xs)], ys[(i + 1) % len(xs)]
+            if y1 == y2: continue
+            ins ^= ((y1 > gy) != (y2 > gy)) & (gx < (x2 - x1) * (gy - y1) / (y2 - y1) + x1)
+        bmask[r0:r1, c0:c1] |= ins
+        v = above[r0:r1, c0:c1][ins]; v = v[np.isfinite(v)]
+        if len(v) < 4: continue
+        up = v[v >= 2.0]
+        if len(up) < 0.3 * ins.sum(): continue
+        h = float(np.median(up)); pairs.append((b["t"], b["h"], h))
+        b["h"] = round(min(h, 80.0), 1); b["t"] = 3; from_lidar += 1
+    def versus(kind, name):
+        d = np.array([o - l for t, o, l in pairs if t == kind])
+        if len(d): print(f"  {name} less lidar, {len(d)} buildings: median {np.median(d):+.1f} m, half within {np.percentile(np.abs(d), 50):.1f} m, nine tenths within {np.percentile(np.abs(d), 90):.1f} m")
+    hs = sorted(b["h"] for b in buildings if b["t"] == 3)
+    print(f"heights: {from_lidar} of {len(buildings)} measured from lidar; median {hs[len(hs)//2]} m, 95th percentile {hs[int(len(hs)*.95)]} m, tallest {hs[-1]} m")
+    versus(2, "Microsoft's estimate"); versus(1, "OpenStreetMap's tag"); versus(0, "the placeholder")
+    left = [b for b in buildings if b["t"] != 3]
+    print(f"  not measured: {len(left)} ({sum(b['k'] == 'houseboat' for b in left)} houseboats); of all {sum(b['k'] == 'houseboat' for b in buildings)} houseboats {sum(b['k'] == 'houseboat' and b['t'] == 3 for b in buildings)} measured")
+tagged = sum(b["t"] == 1 for b in buildings); from_ms = sum(b["t"] == 2 for b in buildings)
+
 json.dump({"window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2)},
-           "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged, "heights_microsoft": from_ms,
+           "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged, "heights_microsoft": from_ms, "heights_lidar": from_lidar,
            "buildings": buildings, "roads": roads, "piers": piers}, open(os.path.join(OUT, "town.json"), "w"), separators=(",", ":"))
 print(f"ground {nx}x{ny} at {RES} m, water level {water:.2f} m; {len(buildings)} buildings ({tagged} with a tagged height), {len(roads)} roads, {len(piers)} piers")
 
-# ---- trees, from a canopy height model -------------------------------------------------------------------
-# cache/chm1.bin is 4500 x 4500 float32 at 1 m over the same window, heights in feet above ground, exported from
-# the eight-county canopy height service at zenith.cnr.berkeley.edu (Marin's part is from lidar flown in 2018).
-# In Marin it holds vegetation; buildings were classified out, so it cannot give building heights.
-# One tree per 7 m cell where the canopy's top is 3 m or more, placed at the highest point in the cell, away
-# from building footprints and water. This is a picture of the canopy, not an inventory of trees.
-chm_path = os.path.join(CACHE, "chm1.bin")
-if os.path.exists(chm_path):
-    N = 4500; c = np.fromfile(chm_path, dtype="<f4").reshape(N, N) * 0.3048
-    block = np.zeros((N, N), bool)
-    for b in buildings:                                    # footprints, grown by 2 m, as a mask
+# ---- trees ------------------------------------------------------------------------------------------------
+# From the lidar surface when it is there: what stands 3 m or more above the ground outside building
+# footprints (grown by 2 m) and off the water. Otherwise from cache/chm1.bin, the eight-county canopy height
+# model (feet; zenith.cnr.berkeley.edu), whose terms of use are not stated, so its trees are not committed.
+# One tree per 7 m cell, at the highest point in the cell, where at least a fifth of the cell stands 2 m up
+# (a power line or a mast is a thin thing and is left out). A picture of the canopy, not an inventory of trees.
+chm_path = os.path.join(CACHE, "chm1.bin"); N = N1M; c = None
+if above is not None:
+    c = np.nan_to_num(above, nan=0.0); block = bmask.copy(); source = "lidar"
+    for _ in range(2):                                     # grow the footprints by two cells
+        g2 = block.copy(); g2[1:] |= block[:-1]; g2[:-1] |= block[1:]; g2[:, 1:] |= block[:, :-1]; g2[:, :-1] |= block[:, 1:]; block = g2
+elif os.path.exists(chm_path):
+    c = np.fromfile(chm_path, dtype="<f4").reshape(N, N) * 0.3048; block = np.zeros((N, N), bool); source = "canopy model"
+    for b in buildings:                                    # footprints' boxes, grown by 2 m
         xs = [p[0] for p in b["p"]]; ys = [N - p[1] for p in b["p"]]
         x0, x1, y0, y1 = int(max(0, min(xs) - 2)), int(min(N, max(xs) + 3)), int(max(0, min(ys) - 2)), int(min(N, max(ys) + 3))
         if x1 > x0 and y1 > y0: block[y0:y1, x0:x1] = True
+if c is not None:
     gfull = np.repeat(np.repeat(g, RES, axis=0), RES, axis=1)   # the 4 m ground at 1 m, for the water mask
-    block |= gfull <= water + 0.06
-    c[block] = 0
+    wet = gfull <= water + 0.06
+    for _ in range(3):                                     # and three cells from the water's edge: boats, floats, pilings
+        w2 = wet.copy(); w2[1:] |= wet[:-1]; w2[:-1] |= wet[1:]; w2[:, 1:] |= wet[:, :-1]; w2[:, :-1] |= wet[:, 1:]; wet = w2
+    c[block | wet] = 0
     CELL = 7; n = N // CELL
     v = c[: n * CELL, : n * CELL].reshape(n, CELL, n, CELL).transpose(0, 2, 1, 3).reshape(n, n, CELL * CELL)
-    arg = v.argmax(axis=2); top = v.max(axis=2)
-    jj, ii = np.nonzero(top >= 3.0)
+    arg = v.argmax(axis=2); top = v.max(axis=2); cover = (v >= 2.0).mean(axis=2)
+    jj, ii = np.nonzero((top >= 3.0) & (cover >= 0.2))
     px = ii * CELL + arg[jj, ii] % CELL + 0.5; py = jj * CELL + arg[jj, ii] // CELL + 0.5
     h = np.minimum(top[jj, ii], 60.0)
     out = np.stack([np.round(px * 10), np.round((N - py) * 10), np.round(h * 10)], axis=1).astype("<u2")   # x east, y north, height: decimetres
     out.tofile(os.path.join(OUT, "trees.bin"))
-    print(f"trees {len(out)} (canopy 3 m or more), median height {np.median(h):.1f} m, tallest {h.max():.1f} m")
+    print(f"trees {len(out)} from the {source} (3 m or more), median height {np.median(h):.1f} m, tallest {h.max():.1f} m")
