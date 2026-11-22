@@ -39,8 +39,9 @@ is marked (esimv1) and is also noted there.
 - [ ] Decide what is copied from esimv1's viewer and what is imported.
 
 - [ ] A height-above-ground raster from the 2018 lidar point cloud (first returns less the bare ground). It would measure building heights, fill the 825 placeholders where the survey saw them, and give trees from a public-domain source, so the tree file could be committed. No splat: the survey has no colour.
-- [ ] Water that moves (Anselm, 2026-11-22: "more for just visual appeal than real 'simulation value'"): a shader on the bay, its level from the tide gauge and its chop from the measured wind where that is cheap. Label on the page what is measured and what is decoration.
-- [ ] Real weather on the view: sky and light from the current observation.
+- [x] Water that moves, at the tide gauge's level, with the wind and sky from live observations: `devlog/20261122-water-tide-and-sky.md`. `view/lib/{tide,sky,water}.js` are written to be shared.
+- [ ] A tide correction from San Francisco to Sausalito; fixed piers told apart from floating ones; a sea bed, so a low tide can be drawn.
+- [ ] (esimv1) Let the catalog list live feeds a page reads, and let a scenario add its own entries.
 
 ## Later
 - [ ] Who maintains it. Tabled on 2026-11-22.
