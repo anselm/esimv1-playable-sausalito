@@ -1,6 +1,6 @@
 name = "playable-sausalito"
 horizon = "2027"
-repo = ""
+repo = "anselm/playable-sausalito"
 code = "local"
 deploy = "none"
 status = "active"        # active | parked (struck through on the dashboard) | archived (hidden)
