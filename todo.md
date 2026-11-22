@@ -38,5 +38,9 @@ is marked (esimv1) and is also noted there.
 - [ ] A solid style: lit terrain, buildings as bodies, water, sun position by date and hour.
 - [ ] Decide what is copied from esimv1's viewer and what is imported.
 
+- [ ] A height-above-ground raster from the 2018 lidar point cloud (first returns less the bare ground). It would measure building heights, fill the 825 placeholders where the survey saw them, and give trees from a public-domain source, so the tree file could be committed. No splat: the survey has no colour.
+- [ ] Water that moves (Anselm, 2026-11-22: "more for just visual appeal than real 'simulation value'"): a shader on the bay, its level from the tide gauge and its chop from the measured wind where that is cheap. Label on the page what is measured and what is decoration.
+- [ ] Real weather on the view: sky and light from the current observation.
+
 ## Later
 - [ ] Who maintains it. Tabled on 2026-11-22.
