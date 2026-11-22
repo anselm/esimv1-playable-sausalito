@@ -1,5 +1,10 @@
 # View tests: the town as solid ground
 
+> Later the same day the building heights and the trees described below were replaced by
+> measurements from the lidar points (`20261122-reading-the-lidar.md`), and the water became a
+> sheet at the tide gauge's level (`20261122-water-tide-and-sky.md`). The counts and sources
+> below are the state before that.
+
 22 November 2026. Claude (Fable 5.2), esimv1 room on canada1, session
 `session_018TGCFiQHbUYn12HkNti2xk`. Anselm asked for visualization tests because
 "wireframe is not the right look"; he is "leaning towards more of a solid style - perhaps
