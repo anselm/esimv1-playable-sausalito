@@ -10,7 +10,7 @@ is marked (esimv1) and is also noted there.
    - [x] Checked against the lidar and replaced by measurements (Microsoft's were 0.4 m low at the median).
    - [x] Trees, now from the lidar points (public domain); the canopy model is no longer used.
    - [ ] A wider window; a try on a phone; aerial photographs on the ground.
-3. [ ] (esimv1) Run this repository as a project by path, with the engine version it needs named here. See the esimv1 devlog of 2026-11-22.
+3. [x] (esimv1) The engine runs a project by path and a project names the engine it needs (`engine = "0.3.0"`); esimv1 was cut into a hub, `esimv1-core`, `esimv1-viewer` and scenario repositories on 2026-11-22. Here that waits for a manifest: the project folder will be a subfolder of this repository.
 4. [ ] (esimv1) Object storage: a mirror of fetched sources first, baked runs second. Not needed until there are runs to publish or a second machine has to run a scenario.
 5. [ ] (esimv1) Runs in real time on the player's device (Anselm, 2026-11-22: "probably requires some re-architecting"). The seams it needs: a run that loads a prepared bundle and never touches disk or network, a kernel that can be stepped and handed events between steps, and results kept in memory. Build those natively first, then try a WebAssembly build of one small scenario.
 
@@ -43,6 +43,8 @@ is marked (esimv1) and is also noted there.
 - [x] Water that moves, at the tide gauge's level, with the wind and sky from live observations: `devlog/20261122-water-tide-and-sky.md`. `view/lib/{tide,sky,water}.js` are written to be shared.
 - [ ] A tide correction from San Francisco to Sausalito; fixed piers told apart from floating ones; a sea bed, so a low tide can be drawn.
 - [ ] (esimv1) Let the catalog list live feeds a page reads, and let a scenario add its own entries.
+
+- [ ] Collect the best ideas from residents: a way to keep, share and compare what people tried (Anselm, 2026-11-22: "we will eventually definitely collect best ideas from citizens - later").
 
 ## Later
 - [ ] Who maintains it. Tabled on 2026-11-22.

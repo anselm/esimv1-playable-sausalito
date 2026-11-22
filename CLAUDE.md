@@ -13,7 +13,7 @@ sketch: a story, an essay and a chore list, with no simulation yet. Not deployed
 
 ## Where things are
 
-- Code: this folder. Repo: `anselm/playable-sausalito` (public; created 2026-11-22).
+- Code: this folder. Repo: `anselm/esimv1-playable-sausalito` (public; created 2026-11-22 as `playable-sausalito` and renamed the same day with the other esimv1 repositories; the folder keeps its name).
 - Devlog: `devlog/` (dated entries; read the tail first).
 - Chores: `todo.md`. Engine chores marked (esimv1) are done in
   `~/projects/2026/earth-simulator-1`, which has its own room and rules.
