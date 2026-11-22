@@ -9,7 +9,8 @@ is marked (esimv1) and is also noted there.
    - [x] Building heights: Microsoft's estimates for 3,355 of 4,216 buildings.
    - [x] Checked against the lidar and replaced by measurements (Microsoft's were 0.4 m low at the median).
    - [x] Trees, now from the lidar points (public domain); the canopy model is no longer used.
-   - [ ] A wider window; a try on a phone; aerial photographs on the ground.
+   - [x] A wider window: 6 km square, with the harbors and Marin City (`devlog/20261122-a-wider-window.md`).
+   - [ ] A try on a phone; named views for the harbors and Marin City; aerial photographs on the ground.
 3. [x] (esimv1) The engine runs a project by path and a project names the engine it needs (`engine = "0.3.0"`); esimv1 was cut into a hub, `esimv1-core`, `esimv1-viewer` and scenario repositories on 2026-11-22. Here that waits for a manifest: the project folder will be a subfolder of this repository.
 4. [ ] (esimv1) Object storage: a mirror of fetched sources first, baked runs second. Not needed until there are runs to publish or a second machine has to run a scenario.
 5. [ ] (esimv1) Runs in real time on the player's device (Anselm, 2026-11-22: "probably requires some re-architecting"). The seams it needs: a run that loads a prepared bundle and never touches disk or network, a kernel that can be stepped and handed events between steps, and results kept in memory. Build those natively first, then try a WebAssembly build of one small scenario.

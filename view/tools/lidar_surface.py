@@ -2,7 +2,7 @@
 
   python lidar_surface.py <folder of .laz in EPSG:3857> <out.bin>
 
-Writes float32, 4500 x 4500, row 0 at the north edge, metres NAVD88, NaN where no point fell;
+Writes float32, one cell per metre of the window (view/window.json), row 0 at the north edge, metres NAVD88, NaN where no point fell;
 and <out>.count.bin, uint16 points per cell. Points classed as noise (7, 18) are left out.
 Needs laspy with a LAZ backend and pyproj (kept in a private venv, not a project dependency).
 """
@@ -10,7 +10,9 @@ import sys, glob, numpy as np, laspy
 from pyproj import Transformer
 from concurrent.futures import ProcessPoolExecutor
 
-E0, N0, E1, N1 = 542800, 4187800, 547300, 4192300          # the window, UTM zone 10 north (EPSG:26910)
+import json, os
+_W = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'window.json')))
+E0, N0, E1, N1 = _W['e0'], _W['n0'], _W['e1'], _W['n1']          # the window, UTM zone 10 north (EPSG:26910)
 NX, NY = E1 - E0, N1 - N0
 
 def one(path):

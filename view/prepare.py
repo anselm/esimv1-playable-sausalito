@@ -14,7 +14,8 @@ import json, subprocess, sys, os
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__)); CACHE = os.path.join(HERE, "..", "cache"); OUT = os.path.join(HERE, "data")
-E0, N0, E1, N1, RES = 542800, 4187800, 547300, 4192300, 4      # UTM zone 10N (EPSG:26910), metres
+WIN = json.load(open(os.path.join(HERE, "window.json")))                 # the window: UTM zone 10N (EPSG:26910), metres
+E0, N0, E1, N1, RES = WIN["e0"], WIN["n0"], WIN["e1"], WIN["n1"], WIN["res"]
 os.makedirs(OUT, exist_ok=True)
 
 def sh(cmd): subprocess.run(cmd, shell=True, check=True, cwd=CACHE)
@@ -145,7 +146,7 @@ if os.path.exists(dsm_path):
     print(f"  not measured: {len(left)} ({sum(b['k'] == 'houseboat' for b in left)} houseboats); of all {sum(b['k'] == 'houseboat' for b in buildings)} houseboats {sum(b['k'] == 'houseboat' and b['t'] == 3 for b in buildings)} measured")
 tagged = sum(b["t"] == 1 for b in buildings); from_ms = sum(b["t"] == 2 for b in buildings)
 
-json.dump({"window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2)},
+json.dump({"window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2), "anchor": WIN["anchor"]},
            "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged, "heights_microsoft": from_ms, "heights_lidar": from_lidar,
            "buildings": buildings, "roads": roads, "piers": piers}, open(os.path.join(OUT, "town.json"), "w"), separators=(",", ":"))
 print(f"ground {nx}x{ny} at {RES} m, water level {water:.2f} m; {len(buildings)} buildings ({tagged} with a tagged height), {len(roads)} roads, {len(piers)} piers")

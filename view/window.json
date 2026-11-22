@@ -1,0 +1,7 @@
+{
+  "note": "The window the view covers, in UTM zone 10 north (EPSG:26910), metres. Widened on 2026-11-22 to take in the floating-home harbors, Marin City and the hills behind (it was 542800..547300 by 4187800..4192300). prepare.py and the tools read this file.",
+  "e0": 541300, "n0": 4187800, "e1": 547300, "n1": 4193800, "res": 4,
+  "south": 37.8364, "west": -122.5307, "north": 37.8908, "east": -122.4620,
+  "mercator": [-13640048, 4556382, -13632414, 4563966],
+  "anchor": [545050, 4190050]
+}
