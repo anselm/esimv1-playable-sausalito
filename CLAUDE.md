@@ -32,3 +32,10 @@ sketch: a story, an essay and a chore list, with no simulation yet. Not deployed
   scenario").
 - `devlog/20261122-a-town-and-its-playable-model.md` is a machine draft of an essay that is his to
   rewrite.
+
+## Live (since 2026-11-22)
+
+https://sausalito.exe.xyz/ (exe.dev VM `sausalito`, unit `sausalito.service`, port 8000, public) serves `view/` through
+`deploy/serve.mjs`. `deploy/deploy.sh` puts the current folder there; it is run by hand on Anselm's say and a push does
+not deploy. Anselm: "i want to be able to show off the sausalito model live on the web even in the early stages".
+

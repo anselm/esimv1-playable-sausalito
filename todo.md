@@ -48,7 +48,7 @@ is marked (esimv1) and is also noted there.
 - [ ] Collect the best ideas from residents: a way to keep, share and compare what people tried (Anselm, 2026-11-22: "we will eventually definitely collect best ideas from citizens - later").
 
 ## Directions from Anselm, 22 November 2026 (none started)
-- [ ] Its own address. "most of our esimv1 models run inside the esimv1 repo - this model should have its own url such as sausalito.exe.xyz". The view can go there first; it is static files.
+- [x] Its own address: https://sausalito.exe.xyz/ serves the view (22 November). A domain of its own, if wanted, is bound with the harness's `exe-domain`.
 - [ ] A conversational interface. "the sausalito model should probably have a conversational interface". A person asks in words; the answer's numbers come from runs and from nothing else.
 - [ ] A layer of local news and media. He gathered "all the general ambient news and media and sources" for Cortes and Salt Spring, "even radio stations", and sees it as "fuel for discovery of issues we may want to model", read continually by a language model, shown in the page as well, and built as "a more or less independent module or service that can do this for arbitrary places". The second research pass here (`devlog/20261122-sausalito-from-primary-pages.md`) is that work done once by hand.
 - [ ] Words. "i should probably use the term scenario rather than model ... will want to make sure i am consistent in my language". The README and the essay say "model" throughout; change them once he settles it.

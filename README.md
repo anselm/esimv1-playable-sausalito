@@ -1,5 +1,7 @@
 # Playable Sausalito
 
+A first view of the town is live at **https://sausalito.exe.xyz/**: the ground, buildings and trees from lidar, the sun by date and hour, and the water at the tide gauge's level. Nothing in it is simulated yet.
+
 A playable model of Sausalito, California: a simulation of the town that anyone can set
 conditions on, run forward, and compare with what would have happened otherwise.
 
