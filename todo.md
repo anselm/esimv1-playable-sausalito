@@ -20,7 +20,7 @@ is marked (esimv1) and is also noted there.
 - [x] README tells what a playable Sausalito is and what it would let a resident try (first draft, 2026-11-22).
 - [ ] Check every row of `devlog/20261122-what-sausalito-is-deciding.md` against a primary page; most are search summaries.
 - [ ] A licence file.
-- [ ] Choose the first question. Not chosen yet; it is Anselm's to choose.
+- [ ] Choose the first question. Not chosen yet; it is Anselm's to choose. Four candidates with what would test each: `devlog/20261123-questions-it-could-answer.md`.
 - [ ] Settle the term: "playable Sausalito", "playable place", or another.
 
 ## The ground
@@ -52,6 +52,9 @@ is marked (esimv1) and is also noted there.
 - [ ] A conversational interface. "the sausalito model should probably have a conversational interface". A person asks in words; the answer's numbers come from runs and from nothing else.
 - [x] A layer of local news and media: the page asks the inhaler (`anselm/inhaler`, https://inhaler.exe.xyz/) and shows issues, facts around the date on the slider, and pins (`devlog/20261122-news-on-the-page.md`). Next: news beside a scenario's own timeline, once there is one.
 - [ ] Words. "i should probably use the term scenario rather than model ... will want to make sure i am consistent in my language". The README and the essay say "model" throughout; change them once he settles it.
+
+- [x] A clean page: panels closed behind three buttons, a one-line readout (23 November).
+- [ ] A "layers" button: parcels, zoning, housing sites, flood maps, evacuation zones, hazards, census, each fetched from its publisher; a card for a clicked building or lot.
 
 ## Later
 - [ ] Who maintains it. Tabled on 2026-11-22.

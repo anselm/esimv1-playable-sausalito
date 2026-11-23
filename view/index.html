@@ -12,25 +12,28 @@
   .panel { position: fixed; background: var(--panel); backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
   #title { top: 12px; left: 12px; font-weight: 600; }
   #title small { display: block; font-weight: 400; opacity: .75; }
-  #ctl { left: 12px; bottom: 12px; width: min(330px, calc(100vw - 50px)); }
+  #bar { left: 12px; bottom: 12px; padding: 6px 8px; display: flex; align-items: center; gap: 6px; max-width: calc(100vw - 40px); }
+  #bar #readout { margin-left: 6px; font-variant-numeric: tabular-nums; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #ctl { left: 12px; bottom: 60px; width: min(330px, calc(100vw - 50px)); }
   #ctl .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
   #ctl label { width: 44px; opacity: .75; }
   #ctl input[type=range] { flex: 1; accent-color: var(--accent); }
   #ctl output { width: 58px; text-align: right; font-variant-numeric: tabular-nums; }
   button { font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 7px; padding: 4px 9px; cursor: pointer; }
   button.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  #credit { right: 12px; bottom: 12px; max-width: min(360px, calc(100vw - 50px)); font-size: 11px; opacity: .9; }
+  #credit { left: 12px; bottom: 60px; max-width: min(420px, calc(100vw - 50px)); max-height: 60vh; overflow: auto; font-size: 11px; }
   #credit a { color: inherit; }
-  #news { top: 12px; right: 12px; width: min(340px, calc(100vw - 50px)); max-height: 52vh; overflow: auto; font-size: 12px; }
+  #news { top: 12px; right: 12px; width: min(340px, calc(100vw - 50px)); max-height: 70vh; overflow: auto; font-size: 12px; }
   #news h4 { margin: 0 0 2px; font-size: 13px; } #news .tabs { margin: 6px 0; } #news .it { padding: 6px 0; border-top: 1px solid var(--line); cursor: default; }
   #news .it b { font-weight: 600; } #news .m { opacity: .7; } #news a { color: var(--accent); } #news .go { cursor: pointer; color: var(--accent); }
   #wait { top: 50%; left: 50%; transform: translate(-50%,-50%); }
-  @media (max-width: 720px) { #credit { display: none; } #news { max-height: 26vh; } }
+  @media (max-width: 720px) { #news { top: auto; bottom: 60px; left: 12px; right: auto; max-height: 45vh; } #title small { display: none; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="title" class="panel">Playable Sausalito<small>a view test: ground, buildings, sun and the tide. Nothing here is simulated.</small></div>
+<div id="title" class="panel">Playable Sausalito<small>the town as measured. Nothing here is simulated yet.</small></div>
+<div id="bar" class="panel" hidden><button data-p="ctl">view</button><button data-p="news" id="newsBtn" hidden>news</button><button data-p="credit">about</button><span id="readout"></span></div>
 <div id="news" class="panel" hidden><h4>What the town is talking about</h4><div class="m">Read from local news, notices and public posts by the <a href="https://inhaler.exe.xyz/" target="_blank" rel="noopener">inhaler</a>. Each line is what a source said; nothing is checked for truth.</div><div class="tabs"><button id="tabIssues" class="on">issues</button> <button id="tabDate">around this date</button></div><div id="newsList"></div></div>
 <div id="wait" class="panel">building the town…</div>
 <div id="ctl" class="panel" hidden>
@@ -41,7 +44,7 @@
   <div class="row"><label>date</label><input id="day" type="range" min="1" max="365" step="1"><output id="dayo"></output></div>
   <div class="row"><label>time</label><input id="hour" type="range" min="0" max="24" step="0.25"><output id="houro"></output></div>
 </div>
-<div id="credit" class="panel">Ground: US Geological Survey 3DEP one-metre lidar elevation, 2018 survey, drawn at 4 m.
+<div id="credit" class="panel" hidden>Ground: US Geological Survey 3DEP one-metre lidar elevation, 2018 survey, drawn at 4 m.
   Trees: whatever stands 3 m or more above the ground outside buildings in the same survey's points (US Geological Survey), one body per 7 m of canopy.
   Roads are OpenStreetMap's lines drawn as geometry on the ground, as wide as their lanes on the map or as their class usually is; bridges stand at the height the lidar saw. Buildings, roads and piers: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.
   Building heights: <span id="tagged"></span>. Clock time is Pacific Standard Time.
@@ -266,7 +269,9 @@ const decks = new THREE.Mesh(new THREE.BufferGeometry(), deckMat); decks.castSha
       const c = [[a[0] + ox, a[1] + oy, za], [a[0] - ox, a[1] - oy, za], [b[0] - ox, b[1] - oy, zb], [b[0] + ox, b[1] + oy, zb]]
       for (const k of [0, 1, 2, 0, 2, 3]) pos.push(X(c[k][0]), c[k][2], Z(c[k][1])) } }
   decks.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); decks.geometry.computeVertexNormals() }
+function readout() { const el = document.getElementById('readout'); if (el) el.textContent = `${dayToDate(state.day)}, ${clock(state.hour)} · water ${state.level.toFixed(2)} m${state.live ? ' (measured)' : ''}` }
 function applyWater() {
+  readout()
   const level = Math.max(state.level, W.water_m + 0.1), lift = level - W.water_m           // never below the water the lidar saw
   water.set({ level_m: level, wind_ms: state.wind.speed_ms, wind_from_deg: state.wind.from_deg }); piers.position.y = level + 0.5
   const pos = bGeo.attributes.position.array
@@ -317,7 +322,7 @@ function applySun() {
   pierMat.color.set(L.pier); deckMat.color.set(L.road)
   water.set({ sunDir: s.dir, sunColor: sun.color.clone().multiplyScalar(day * (1 - 0.8 * cl)), sky: scene.background, color: new THREE.Color().setRGB(L.water[0] / 255, L.water[1] / 255, L.water[2] / 255, THREE.SRGBColorSpace).multiplyScalar(0.25 + 0.75 * day), calm: state.look === 'day' ? 0 : 0.8 })
   renderer.toneMappingExposure = L.exposure; renderer.shadowMap.needsUpdate = true; dirty = true
-  const m = dayToDate(state.day); document.getElementById('dayo').textContent = m; document.getElementById('houro').textContent = clock(state.hour)
+  const m = dayToDate(state.day); document.getElementById('dayo').textContent = m; document.getElementById('houro').textContent = clock(state.hour); readout()
 }
 function dayToDate(n) { let m = 0; while (n > MLEN[m]) n -= MLEN[m++]; return `${n} ${MONTHS[m]}` }
 function clock(h) { const hh = Math.floor(h) % 24, mm = Math.round((h - Math.floor(h)) * 60); return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}` }
@@ -386,7 +391,7 @@ async function loadNews() {
     for (const f of facts) { const p = spot(f); if (!p) continue; const key = `${Math.round(p.x)},${Math.round(p.y)}`; if (seen.has(key)) continue; seen.add(key)
       const g = groundAt(p.x, p.y), pole = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 46, 6), mat), head = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 8), mat)
       pole.position.set(X(p.x), g + 23, Z(p.y)); head.position.set(X(p.x), g + 48, Z(p.y)); news.pins.add(pole, head) }
-    if (!q.has('bare')) document.getElementById('news').hidden = false
+    document.getElementById('newsBtn').hidden = false; news.pins.visible = !document.getElementById('news').hidden
     drawNews(); dirty = true
   } catch (e) { /* the page stands without the news */ }
 }
@@ -410,8 +415,20 @@ if (q.has('pos') && q.has('at')) { const v = (k) => q.get(k).split(',').map(Numb
 if (q.has('level')) note.textContent = `${state.level.toFixed(2)} m above NAVD88, set in the address for a test`
 else if (q.has('day') || q.has('hour')) goMoment(); else goLive()
 if (q.get('news') !== '0') loadNews()
-document.getElementById('wait').remove(); document.getElementById('ctl').hidden = false
-if (q.has('bare')) for (const id of ['ctl', 'credit', 'title']) document.getElementById(id).style.display = 'none'
+document.getElementById('wait').remove()
+// the picture first: every panel is closed until its button is pressed, and one is open at a time on a small screen
+const PANELS = ['ctl', 'news', 'credit'], bar = document.getElementById('bar'); bar.hidden = false
+function toggle(id, on = document.getElementById(id).hidden) {
+  if (on && innerWidth < 720) for (const p of PANELS) document.getElementById(p).hidden = true
+  if (on && id !== 'news') for (const p of ['ctl', 'credit']) document.getElementById(p).hidden = true            // these two share a corner
+  document.getElementById(id).hidden = !on
+  for (const b of bar.querySelectorAll('button')) b.classList.toggle('on', !document.getElementById(b.dataset.p).hidden)
+  news.pins.visible = !document.getElementById('news').hidden; dirty = true
+}
+for (const b of bar.querySelectorAll('button')) b.onclick = () => toggle(b.dataset.p)
+news.pins.visible = false
+for (const id of (q.get('open') || '').split(',')) if (PANELS.includes(id)) toggle(id, true)
+if (q.has('bare')) for (const id of ['ctl', 'credit', 'title', 'bar', 'news']) document.getElementById(id).style.display = 'none'
 const still = q.has('still'), t0 = performance.now()
 renderer.setAnimationLoop(() => { controls.update(); if (!still) water.tick((performance.now() - t0) / 1000); if (dirty || !still) { dirty = false; renderer.render(scene, camera); document.title = 'Playable Sausalito: view test (drawn)' } })
 </script>
