@@ -50,7 +50,7 @@ is marked (esimv1) and is also noted there.
 ## Directions from Anselm, 22 November 2026 (none started)
 - [x] Its own address: https://sausalito.exe.xyz/ serves the view (22 November). A domain of its own, if wanted, is bound with the harness's `exe-domain`.
 - [ ] A conversational interface. "the sausalito model should probably have a conversational interface". A person asks in words; the answer's numbers come from runs and from nothing else.
-- [ ] A layer of local news and media. He gathered "all the general ambient news and media and sources" for Cortes and Salt Spring, "even radio stations", and sees it as "fuel for discovery of issues we may want to model", read continually by a language model, shown in the page as well, and built as "a more or less independent module or service that can do this for arbitrary places". The second research pass here (`devlog/20261122-sausalito-from-primary-pages.md`) is that work done once by hand.
+- [x] A layer of local news and media: the page asks the inhaler (`anselm/inhaler`, https://inhaler.exe.xyz/) and shows issues, facts around the date on the slider, and pins (`devlog/20261122-news-on-the-page.md`). Next: news beside a scenario's own timeline, once there is one.
 - [ ] Words. "i should probably use the term scenario rather than model ... will want to make sure i am consistent in my language". The README and the essay say "model" throughout; change them once he settles it.
 
 ## Later

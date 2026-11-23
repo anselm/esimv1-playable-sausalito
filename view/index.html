@@ -21,13 +21,17 @@
   button.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
   #credit { right: 12px; bottom: 12px; max-width: min(360px, calc(100vw - 50px)); font-size: 11px; opacity: .9; }
   #credit a { color: inherit; }
+  #news { top: 12px; right: 12px; width: min(340px, calc(100vw - 50px)); max-height: 52vh; overflow: auto; font-size: 12px; }
+  #news h4 { margin: 0 0 2px; font-size: 13px; } #news .tabs { margin: 6px 0; } #news .it { padding: 6px 0; border-top: 1px solid var(--line); cursor: default; }
+  #news .it b { font-weight: 600; } #news .m { opacity: .7; } #news a { color: var(--accent); } #news .go { cursor: pointer; color: var(--accent); }
   #wait { top: 50%; left: 50%; transform: translate(-50%,-50%); }
-  @media (max-width: 720px) { #credit { display: none; } }
+  @media (max-width: 720px) { #credit { display: none; } #news { max-height: 26vh; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="title" class="panel">Playable Sausalito<small>a view test: ground, buildings, sun and the tide. Nothing here is simulated.</small></div>
+<div id="news" class="panel" hidden><h4>What the town is talking about</h4><div class="m">Read from local news, notices and public posts by the <a href="https://inhaler.exe.xyz/" target="_blank" rel="noopener">inhaler</a>. Each line is what a source said; nothing is checked for truth.</div><div class="tabs"><button id="tabIssues" class="on">issues</button> <button id="tabDate">around this date</button></div><div id="newsList"></div></div>
 <div id="wait" class="panel">building the town…</div>
 <div id="ctl" class="panel" hidden>
   <div class="row"><label>look</label><span id="looks"></span></div>
@@ -41,7 +45,7 @@
   Trees: whatever stands 3 m or more above the ground outside buildings in the same survey's points (US Geological Survey), one body per 7 m of canopy.
   Roads are OpenStreetMap's lines drawn as geometry on the ground, as wide as their lanes on the map or as their class usually is; bridges stand at the height the lidar saw. Buildings, roads and piers: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.
   Building heights: <span id="tagged"></span>. Clock time is Pacific Standard Time.
-  Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. Ground below that level shows wet whether or not the bay can reach it; walls, drains and pumps are not in the picture. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation.</div>
+  Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. Ground below that level shows wet whether or not the bay can reach it; walls, drains and pumps are not in the picture. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation. Red pins: places named in the news the inhaler has read.</div>
 
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
 <script type="module">
@@ -351,11 +355,48 @@ function applyLook() { const L = LOOKS[state.look]; paintGround(L); paintRoads(L
 const AX = (W.anchor ? W.anchor[0] : (W.e0 + W.e1) / 2) - (W.e0 + W.e1) / 2, AZ = (W.n0 + W.n1) / 2 - (W.anchor ? W.anchor[1] : (W.n0 + W.n1) / 2)
 function applyCam() { const c = CAMS[state.cam], top = state.cam === 'top'; camera.position.set(top ? 0 : c.pos[0] + AX, top ? Math.max(SX, SY) * 1.25 : c.pos[1], top ? 1 : c.pos[2] + AZ); controls.target.set(top ? 0 : c.at[0] + AX, c.at[1], top ? 0 : c.at[2] + AZ); controls.update(); dirty = true; for (const b of document.querySelectorAll('#cams button')) b.classList.toggle('on', b.dataset.k === state.cam) }
 
+// ---- news: what the inhaler has read about the town (a separate service; the page only asks it) -----------
+const INHALER = q.get('inhaler') || 'https://inhaler.exe.xyz', BEAT = 'sausalito'
+function utm10(lat, lon) {                                            // WGS84 to UTM zone 10 north, metres (Krueger series, good to a centimetre here)
+  const a = 6378137, f = 1 / 298.257223563, k0 = 0.9996, e2 = f * (2 - f), n = f / (2 - f), rad = Math.PI / 180, phi = lat * rad, lam = (lon + 123) * rad
+  const A = a / (1 + n) * (1 + n * n / 4 + n ** 4 / 64), al = [n / 2 - 2 * n * n / 3 + 5 * n ** 3 / 16, 13 * n * n / 48 - 3 * n ** 3 / 5, 61 * n ** 3 / 240]
+  const t = Math.sinh(Math.atanh(Math.sin(phi)) - Math.sqrt(e2) * Math.atanh(Math.sqrt(e2) * Math.sin(phi))), xi = Math.atan2(t, Math.cos(lam)), eta = Math.atanh(Math.sin(lam) / Math.sqrt(1 + t * t))
+  let E = eta, N = xi; for (let j = 1; j <= 3; j++) { E += al[j - 1] * Math.cos(2 * j * xi) * Math.sinh(2 * j * eta); N += al[j - 1] * Math.sin(2 * j * xi) * Math.cosh(2 * j * eta) }
+  return [500000 + k0 * A * E, k0 * A * N]
+}
+const news = { issues: [], facts: [], tab: 'issues', pins: new THREE.Group() }; scene.add(news.pins)
+const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const factDay = (f) => f.at || f.published || 0, dayWords = (t) => t ? new Date(t * 1000).toISOString().slice(0, 10) : 'no date'
+function spot(f) { if (f.lat == null) return null; const [e, n] = utm10(f.lat, f.lon), x = e - W.e0, y = n - W.n0; return x > 0 && y > 0 && x < SX && y < SY ? { x, y } : null }
+function lookAt(f) { const p = spot(f); if (!p) return; const g = groundAt(p.x, p.y); controls.target.set(X(p.x), g, Z(p.y)); camera.position.set(X(p.x) + 260, g + 240, Z(p.y) + 320); controls.update(); dirty = true }
+const factLine = (f, i) => `<div class="it"><span class="m">${dayWords(factDay(f))}${f.place ? ' · ' + esc(f.place) : ''}</span><br>${esc(f.claim)}<br><a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.source)}</a>${spot(f) ? ` · <span class="go" data-f="${i}">show on the map</span>` : ''}</div>`
+function drawNews() {
+  const host = document.getElementById('newsList'); let shown = []
+  if (news.tab === 'issues') host.innerHTML = news.issues.length ? news.issues.map((x, k) => `<div class="it"><b>${esc(x.title)}</b> <span class="m">(${x.facts.length} facts)</span><br>${esc(x.summary)}<details><summary class="m">what it rests on</summary>${x.facts.map((f) => { shown.push(f); return factLine(f, shown.length - 1) }).join('')}</details></div>`).join('') : '<div class="it m">No issues read yet.</div>'
+  else { const t = moment().getTime() / 1000; shown = news.facts.filter((f) => Math.abs(factDay(f) - t) < 10 * 86400).sort((a, b) => Math.abs(factDay(a) - t) - Math.abs(factDay(b) - t)).slice(0, 12)
+    host.innerHTML = shown.length ? shown.map(factLine).join('') : `<div class="it m">Nothing read for the ten days either side of ${dayToDate(state.day)}. The inhaler began reading on 22 November 2026 and knows little of earlier dates.</div>` }
+  for (const el of host.querySelectorAll('.go')) el.onclick = () => lookAt(shown[+el.dataset.f])
+  for (const [id, k] of [['tabIssues', 'issues'], ['tabDate', 'date']]) document.getElementById(id).classList.toggle('on', news.tab === k)
+}
+async function loadNews() {
+  try {
+    const [issues, facts] = await Promise.all([fetch(`${INHALER}/beats/${BEAT}/issues`).then((r) => r.json()), fetch(`${INHALER}/beats/${BEAT}/facts?limit=1000`).then((r) => r.json())])
+    news.issues = issues; news.facts = facts
+    const seen = new Set(), mat = new THREE.MeshBasicMaterial({ color: 0xe0563a })
+    for (const f of facts) { const p = spot(f); if (!p) continue; const key = `${Math.round(p.x)},${Math.round(p.y)}`; if (seen.has(key)) continue; seen.add(key)
+      const g = groundAt(p.x, p.y), pole = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 46, 6), mat), head = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 8), mat)
+      pole.position.set(X(p.x), g + 23, Z(p.y)); head.position.set(X(p.x), g + 48, Z(p.y)); news.pins.add(pole, head) }
+    if (!q.has('bare')) document.getElementById('news').hidden = false
+    drawNews(); dirty = true
+  } catch (e) { /* the page stands without the news */ }
+}
+document.getElementById('tabIssues').onclick = () => { news.tab = 'issues'; drawNews() }; document.getElementById('tabDate').onclick = () => { news.tab = 'date'; drawNews() }
+
 // ---- controls --------------------------------------------------------------------------------------
 const mk = (host, table, key, apply) => { for (const k in table) { const b = document.createElement('button'); b.textContent = table[k].name; b.dataset.k = k; b.style.marginRight = '4px'; b.style.marginBottom = '3px'; b.onclick = () => { state[key] = k; apply() }; document.getElementById(host).append(b) } }
 mk('looks', LOOKS, 'look', applyLook); mk('cams', CAMS, 'cam', applyCam)
 const dayIn = document.getElementById('day'), hourIn = document.getElementById('hour'); dayIn.value = state.day; hourIn.value = state.hour
-dayIn.oninput = () => { state.day = +dayIn.value; goMoment() }; hourIn.oninput = () => { state.hour = +hourIn.value; goMoment() }
+dayIn.oninput = () => { state.day = +dayIn.value; goMoment(); if (news.tab === 'date') drawNews() }; hourIn.oninput = () => { state.hour = +hourIn.value; goMoment() }
 liveBtn.onclick = goLive
 { const n = town.buildings.length, ms = town.heights_microsoft || 0, tg = town.heights_tagged, li = town.heights_lidar || 0, rest = n - ms - tg - li
   document.getElementById('tagged').innerHTML = [li && `${li.toLocaleString()} of ${n.toLocaleString()} are measured from the 2018 lidar points (the median height of what stands inside each footprint)`, ms && `${ms.toLocaleString()} are Microsoft's estimates (Global ML Building Footprints)`, tg && `${tg} are OpenStreetMap tags`, rest && `<b>${rest.toLocaleString()} are placeholders</b>`].filter(Boolean).join(', ') }
@@ -368,6 +409,7 @@ addEventListener('resize', size); size(); applyLook(); applyCam(); applyWater()
 if (q.has('pos') && q.has('at')) { const v = (k) => q.get(k).split(',').map(Number); camera.position.set(v('pos')[0] + AX, v('pos')[1], v('pos')[2] + AZ); controls.target.set(v('at')[0] + AX, v('at')[1], v('at')[2] + AZ); controls.update() }   // a free view for tests, in the same metres as the named views
 if (q.has('level')) note.textContent = `${state.level.toFixed(2)} m above NAVD88, set in the address for a test`
 else if (q.has('day') || q.has('hour')) goMoment(); else goLive()
+if (q.get('news') !== '0') loadNews()
 document.getElementById('wait').remove(); document.getElementById('ctl').hidden = false
 if (q.has('bare')) for (const id of ['ctl', 'credit', 'title']) document.getElementById(id).style.display = 'none'
 const still = q.has('still'), t0 = performance.now()
