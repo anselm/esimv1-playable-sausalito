@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Playable Sausalito: view test</title>
+<title>The Sausalito Model</title>
 <style>
   :root { --ink: #1c2328; --panel: rgba(255,255,255,.86); --line: rgba(0,0,0,.14); --accent: #0f6f8f; }
   @media (prefers-color-scheme: dark) { :root { --ink: #e8ecee; --panel: rgba(22,27,31,.84); --line: rgba(255,255,255,.16); --accent: #6cc3de; } }
@@ -49,7 +49,7 @@
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="title" class="panel">Playable Sausalito<small>the town as measured, and a few things to try.</small></div>
+<div id="title" class="panel">The Sausalito Model<small>the town as measured, and a few things to try.</small></div>
 <div id="readout" class="panel" hidden></div>
 <div id="bar" class="panel" hidden><button id="burger" aria-label="menu" aria-expanded="true">☰</button><div id="menu"><button data-p="ctl">view</button><button data-p="play">play</button><button data-p="layers">layers</button><button data-p="news" id="newsBtn" hidden>news</button><button data-p="credit">about</button></div></div>
 <div id="news" class="panel" hidden><h4>What the town is talking about</h4><div class="m">Read from local news, notices and public posts by the <a href="https://inhaler.exe.xyz/" target="_blank" rel="noopener">inhaler</a>. Each line is what a source said; nothing is checked for truth.</div><div class="tabs"><button id="tabIssues" class="on">issues</button> <button id="tabDate">around this date</button></div><div id="newsList"></div></div>
@@ -654,7 +654,7 @@ function tourStep(now, dt) {
   controls.update(); return true
 }
 const still = q.has('still'), t0 = performance.now(); let lastT = t0
-renderer.setAnimationLoop(() => { const now = performance.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now; if (!(!still && tourStep(now, dt))) controls.update(); if (!still) water.tick((now - t0) / 1000); placeChips(); if (dirty || !still) { dirty = false; renderer.render(scene, camera); document.title = 'Playable Sausalito: view test (drawn)' } })
+renderer.setAnimationLoop(() => { const now = performance.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now; if (!(!still && tourStep(now, dt))) controls.update(); if (!still) water.tick((now - t0) / 1000); placeChips(); if (dirty || !still) { dirty = false; renderer.render(scene, camera); document.title = 'The Sausalito Model (drawn)' } })
 </script>
 </body>
 </html>

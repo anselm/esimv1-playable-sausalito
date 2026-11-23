@@ -8,7 +8,7 @@
 
 const API = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter'
 const ask = async (station, extra) => {
-  const u = `${API}?station=${station}&time_zone=gmt&units=metric&format=json&application=playable-place&${extra}`
+  const u = `${API}?station=${station}&time_zone=gmt&units=metric&format=json&application=the-sausalito-model&${extra}`
   const r = await fetch(u); if (!r.ok) throw new Error(`tide gauge ${station}: ${r.status}`)
   const j = await r.json(); if (j.error) throw new Error(`tide gauge ${station}: ${j.error.message}`)
   return j

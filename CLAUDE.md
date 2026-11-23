@@ -1,11 +1,13 @@
-# playable-sausalito
+# The Sausalito Model (folder: playable-sausalito)
 
 Project-specific orientation only. House policy (devlog, git, UX, writing,
 deploy) comes from the harness and is not repeated here.
 
 ## What this is
 
-A playable model of Sausalito, California: a simulation of the town that a resident or
+The Sausalito Model (its name since 2026-11-23, when Anselm said "some people don't like 'playable'"; before that, Playable
+Sausalito; the folder, the repository `esimv1-playable-sausalito` and the dated devlog entries keep the old word). A model of
+Sausalito, California, that people can try things on: a simulation of the town that a resident or
 an official can set conditions on, run forward and compare. It is public, free and open
 source. It is also the first scenario kept outside the esimv1 repository, so it tests
 esimv1 as a simulation core that other projects depend on. As of 2026-11-22 it is a

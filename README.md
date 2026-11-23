@@ -1,12 +1,14 @@
-# Playable Sausalito
+# The Sausalito Model
 
-A first view of the town is live at **https://sausalito.exe.xyz/**: the ground, buildings and trees from lidar, the sun by date and hour, and the water at the tide gauge's level. Nothing in it is simulated yet.
+It is live at **https://sausalito.exe.xyz/**: the town's ground, buildings and trees from lidar, its roads and creeks, the sun by date and hour, the water at the tide gauge's level, public maps of zoning and hazards, the local news, and a handful of propositions to say yes or no to.
 
-A playable model of Sausalito, California: a simulation of the town that anyone can set
-conditions on, run forward, and compare with what would have happened otherwise.
+A model of Sausalito, California, that people can try things on: a simulation of the town
+that anyone can set conditions on, run forward, and compare with what would have happened otherwise.
 
-**Where it stands (22 November 2026): a sketch.** This repository holds the idea, a
-first reading of the town and a list of work. There is no simulation here yet.
+**Where it stands (23 November 2026): a first demonstration.** One thing in it is
+computed, where the bay's water goes on the measured ground at a chosen tide. The other
+consequences it shows are rules of thumb written by hand, and the page marks which is
+which. `devlog/` has what each part rests on and what is wrong with it.
 
 ## The idea
 
@@ -14,7 +16,7 @@ A town makes a few large decisions each decade and lives with them for generatio
 where homes go, what to do about a shoreline, how visitors arrive. Residents and
 officials can argue about these in advance. They cannot try them.
 
-A playable model lets them try. A person picks a moment, sets conditions, and presses
+A model they can change lets them try. A person picks a moment, sets conditions, and presses
 play. The town runs forward for a season or for thirty years, and the model reports what
 changed, for whom, and at what cost. Then the person changes one thing and runs it
 again.
@@ -29,7 +31,7 @@ shape, and no part of it has been computed:
 > and moving the pipe instead, and compare the two.
 
 A flood map already shows where the water would stand, and Sausalito has several. A
-playable model shows the choices and what follows from each of them.
+model of this kind shows the choices and what follows from each of them.
 
 It is not a forecast. Each run answers "what follows if these assumptions hold", with
 the assumptions and their sources shown beside the result.
@@ -61,7 +63,7 @@ its pages and its notes. The work ahead is in [todo.md](todo.md).
 
 ## For any town
 
-[A town and its playable model](devlog/20261122-a-town-and-its-playable-model.md) is a
+[A town and its model](devlog/20261122-a-town-and-its-playable-model.md) is a
 draft essay on the questions outside the code: which decision to start from, who holds
 each lever, counting more than one bottom line, trust, who is left out of a model, and
 who keeps it alive.

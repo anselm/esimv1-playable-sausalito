@@ -38,11 +38,11 @@ tray of changes, no split screen. `devlog/20261123-propositions.md`.
 
 ## The story
 
-- [x] README tells what a playable Sausalito is and what it would let a resident try (first draft, 2026-11-22).
+- [x] README tells what the model is and what it would let a resident try (first draft, 2026-11-22; renamed and brought up to date 2026-11-23).
 - [ ] Check every row of `devlog/20261122-what-sausalito-is-deciding.md` against a primary page; most are search summaries.
 - [ ] A licence file.
 - [ ] Choose the first question. Not chosen yet; it is Anselm's to choose. Four candidates with what would test each: `devlog/20261123-questions-it-could-answer.md`.
-- [ ] Settle the term: "playable Sausalito", "playable place", or another.
+- [x] The term: **The Sausalito Model** on the page, the README and the notes (Anselm, 23 November: "some people don't like 'playable'"). The folder, the repository name and dated devlog entries keep the old word. "Playable place" as the general term is his to keep or drop.
 
 ## The ground
 - [ ] The window: city limits, plus how much of Richardson Bay, Marin City and the headlands.

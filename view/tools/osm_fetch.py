@@ -10,7 +10,7 @@ box = f'{W["south"]},{W["west"]},{W["north"]},{W["east"]}'
 q = f'[out:json][timeout:120];(way["building"]({box});way["highway"]({box});way["man_made"="pier"]({box});way["waterway"]({box}););out tags geom;'
 for i, m in enumerate(["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"] * 2):
     try:
-        r = urllib.request.urlopen(urllib.request.Request(m, data=urllib.parse.urlencode({"data": q}).encode(), headers={"User-Agent": "playable-place view tools"}), timeout=180)
+        r = urllib.request.urlopen(urllib.request.Request(m, data=urllib.parse.urlencode({"data": q}).encode(), headers={"User-Agent": "sausalito model view tools"}), timeout=180)
         d = json.loads(r.read())
         if d.get("elements"):
             json.dump(d, open(os.path.join(HERE, "..", "..", "cache", "osm_raw.json"), "w")); print(len(d["elements"]), "ways from", m); sys.exit(0)

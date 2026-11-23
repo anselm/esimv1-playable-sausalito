@@ -9,7 +9,7 @@ $SSH "$HOST" 'command -v node >/dev/null || { curl -fsSL https://deb.nodesource.
 rsync -az --delete -e "$SSH" --exclude tools --exclude prepare.py "$HERE/view" "$HERE/deploy/serve.mjs" "$HOST:/srv/site/"
 $SSH "$HOST" 'sudo tee /etc/systemd/system/sausalito.service >/dev/null <<UNIT
 [Unit]
-Description=Playable Sausalito: the view
+Description=The Sausalito Model: the view
 After=network-online.target
 [Service]
 User=exedev
