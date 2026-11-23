@@ -82,6 +82,10 @@ const LOOKS = {
            roof: (r, k) => k === 'houseboat' ? [[0.55,0.42,0.33],[0.45,0.52,0.55],[0.62,0.58,0.50],[0.40,0.47,0.40]][Math.floor(r * 4) % 4]
                          : [[0.47,0.45,0.43],[0.58,0.40,0.32],[0.52,0.50,0.47],[0.38,0.37,0.36],[0.66,0.63,0.58]][Math.floor(r * 5) % 5],
            tree: (r) => [0.09 + r * 0.07, 0.20 + r * 0.10, 0.08 + r * 0.05], sky: [0.63,0.77,0.90], contours: false, exposure: 1.0, shadow: 0.5 },
+  systems: { name: 'Systems', sun: 0.42, glow: true, land: (e, sl) => { const u = Math.min(1, sl * 1.6); return [13 + 10 * u, 27 + 12 * u, 31 + 12 * u] }, water: [5, 44, 52],
+             road: '#e9bd78', roadMinor: '#7a6a4c', kerb: null, marks: null, roadEdge: null, path: '#3d6f69', pier: '#54807b',
+             wall: (r) => [0.10 + r * 0.03, 0.17 + r * 0.03, 0.19 + r * 0.03], roof: (r) => [0.80 + r * 0.12, 0.56 + r * 0.10, 0.26 + r * 0.06], tree: (r) => [0.08, 0.36 + r * 0.14, 0.30 + r * 0.08],
+             sky: [0.015, 0.045, 0.06], contours: true, exposure: 1.15, shadow: 0.35 },
   paper: { name: 'Paper', land: () => [241,234,216], water: [203,220,226], road: '#ffffff', roadEdge: '#b9ad92', path: '#d9cfb6', pier: '#8c7f6b',
            wall: () => [0.16,0.17,0.19], roof: () => [0.22,0.23,0.25], tree: (r) => [0.60 + r * 0.05, 0.66 + r * 0.05, 0.50 + r * 0.04], sky: [0.95,0.93,0.87], contours: true, exposure: 1.0, shadow: 0.6 },
 }
@@ -90,6 +94,8 @@ const CAMS = {
   downtown:  { name: 'Downtown',     pos: [1750, 330, 520],   at: [760, 15, 60] },
   marinship: { name: 'Marinship',    pos: [450, 420, -300],   at: [-560, 0, -1050] },
   hill:      { name: 'From the hill', pos: [-900, 520, 900],  at: [700, 0, -300] },
+  harbors:   { name: 'Harbors',      pos: [-1500, 380, -1650], at: [-2300, 0, -2500] },
+  marincity: { name: 'Marin City',   pos: [-1750, 520, -900], at: [-2750, 20, -1500] },
   top:       { name: 'Plan',         pos: [0, 5200, 1],       at: [0, 0, 0] },
 }
 const state = { level: q.has('level') ? +q.get('level') : 0.9, wind: { speed_ms: 3, from_deg: 270 }, cloud: null, vis: null, live: false, look: LOOKS[q.get('look')] ? q.get('look') : 'day', day: +(q.get('day') || 172), hour: +(q.get('hour') || 15), cam: CAMS[q.get('cam')] ? q.get('cam') : 'bay' }
@@ -162,7 +168,8 @@ function paintGround(L) {
       for (let i = 0; i < TEX; i++) { const e = groundAt((i + 0.5) * m, y); cur[i] = e <= WATER ? -99 : Math.floor(e / 20) }
       if (j) for (let i = 1; i < TEX; i++) if (cur[i] !== -99 && (cur[i] !== cur[i - 1] || cur[i] !== prev[i]) && cur[i - 1] !== -99 && prev[i] !== -99) {
         const o = (j * TEX + i) * 4, heavy = (Math.max(cur[i], cur[i - 1], prev[i]) % 5 === 0) ? 0.55 : 0.8
-        d2[o] *= heavy; d2[o + 1] *= heavy * 0.97; d2[o + 2] *= heavy * 0.9 }
+        if (L.glow) { const g = heavy < 0.6 ? 46 : 22; d2[o] = Math.min(255, d2[o] + g * 0.5); d2[o + 1] = Math.min(255, d2[o + 1] + g); d2[o + 2] = Math.min(255, d2[o + 2] + g) }      // on a dark ground the lines are lit, not inked
+        else { d2[o] *= heavy; d2[o + 1] *= heavy * 0.97; d2[o + 2] *= heavy * 0.9 } }
       const t = prev; prev = cur; cur = t }
     c.putImageData(im2, 0, 0)
   }
@@ -262,6 +269,7 @@ const roadMesh = { path: roadLayer(1), edge: roadLayer(2), minor: roadLayer(3), 
   }
   for (const k in o) { roadMesh[k].geometry.setAttribute('position', new THREE.Float32BufferAttribute(o[k], 3)); roadMesh[k].geometry.computeVertexNormals() } }
 function paintRoads(L) {
+  for (const k of ['road', 'minor', 'path']) { roadMesh[k].material.emissive.set(L.glow ? (k === 'road' ? L.road : k === 'minor' ? (L.roadMinor || L.road) : L.path) : '#000000'); roadMesh[k].material.emissiveIntensity = L.glow ? 0.9 : 0 }
   roadMesh.road.material.color.set(L.road); roadMesh.minor.material.color.set(L.roadMinor || L.road); roadMesh.path.material.color.set(L.path)
   roadMesh.edge.visible = !!(L.kerb || L.roadEdge); if (roadMesh.edge.visible) roadMesh.edge.material.color.set(L.kerb || L.roadEdge)
   roadMesh.white.visible = roadMesh.yellow.visible = !!L.marks; if (L.marks) { roadMesh.white.material.color.set(L.marks.edge); roadMesh.yellow.material.color.set(L.marks.centre) }
@@ -505,8 +513,31 @@ for (const id of (q.get('open') || '').split(',')) if (PANELS.includes(id)) togg
 if (q.has('layer')) for (const id of q.get('layer').split(',')) { const i = LAYERS.findIndex((d) => d.id === id); if (i >= 0) { const box = document.querySelectorAll('#layerList input')[i]; box.checked = true; box.onchange() } }   // layers from the address, for tests and links
 if (q.has('click')) setTimeout(() => { const [fx, fy] = q.get('click').split(',').map(Number), o = { clientX: fx * innerWidth, clientY: fy * innerHeight, bubbles: true }; renderer.domElement.dispatchEvent(new PointerEvent('pointerdown', o)); renderer.domElement.dispatchEvent(new PointerEvent('pointerup', o)) }, 6000)   // a click from the address, for tests
 if (q.has('bare')) for (const id of ['ctl', 'credit', 'title', 'bar', 'news', 'layers', 'card']) document.getElementById(id).style.display = 'none'
-const still = q.has('still'), t0 = performance.now()
-renderer.setAnimationLoop(() => { controls.update(); if (!still) water.tick((performance.now() - t0) / 1000); if (dirty || !still) { dirty = false; renderer.render(scene, camera); document.title = 'Playable Sausalito: view test (drawn)' } })
+// ---- the tour: when nobody has touched the page for a while, the view travels by itself between the named
+// views, resting at each. It starts from wherever the view was left and stops the instant anyone touches.
+// (After the camera of github.com/anselm/bay-area-twin: a wait before starting, eased legs, never a snap.)
+const TOUR = ['bay', 'downtown', 'marinship', 'harbors', 'marincity', 'hill'], WAIT = 18000, tour = { on: q.get('tour') !== '0' && !matchMedia('(prefers-reduced-motion: reduce)').matches, since: performance.now(), leg: null, i: 0 }
+const touched = () => { tour.since = performance.now(); tour.leg = null }
+for (const ev of ['pointerdown', 'wheel', 'keydown', 'touchstart']) addEventListener(ev, touched, { passive: true })
+const siteOf = (k) => ({ pos: new THREE.Vector3(CAMS[k].pos[0] + AX, CAMS[k].pos[1], CAMS[k].pos[2] + AZ), at: new THREE.Vector3(CAMS[k].at[0] + AX, CAMS[k].at[1], CAMS[k].at[2] + AZ) })
+function tourStep(now, dt) {
+  const open = PANELS.some((p) => !document.getElementById(p).hidden) || !document.getElementById('card').hidden
+  if (!tour.on || open || now - tour.since < (q.has('tournow') ? 500 : WAIT)) return false
+  if (!tour.leg) { const to = siteOf(TOUR[tour.i % TOUR.length]), from = { pos: camera.position.clone(), at: controls.target.clone() }
+    tour.leg = { from, to, t: 0, travel: Math.min(26, Math.max(9, from.pos.distanceTo(to.pos) / 110)), hold: 7 } }
+  const L = tour.leg; L.t += dt
+  if (L.t < L.travel) { const u = L.t / L.travel, k = u * u * u * (u * (u * 6 - 15) + 10)                       // a leg starts and ends at rest
+    camera.position.lerpVectors(L.from.pos, L.to.pos, k); controls.target.lerpVectors(L.from.at, L.to.at, k)
+    camera.position.y += Math.sin(Math.PI * k) * Math.min(260, L.from.pos.distanceTo(L.to.pos) * 0.08)          // a long leg rises a little on the way
+    const x = camera.position.x + SX / 2, y = SY / 2 - camera.position.z; if (x > 0 && y > 0 && x < SX && y < SY) camera.position.y = Math.max(camera.position.y, groundAt(x, y) + 60) }
+  else if (L.t < L.travel + L.hold) { const a = dt * 0.035, dx = camera.position.x - controls.target.x, dz = camera.position.z - controls.target.z      // at rest the view drifts slowly round its subject
+    camera.position.x = controls.target.x + dx * Math.cos(a) - dz * Math.sin(a); camera.position.z = controls.target.z + dx * Math.sin(a) + dz * Math.cos(a) }
+  else { tour.leg = null; tour.i++ }
+  for (const b of document.querySelectorAll('#cams button')) b.classList.remove('on')
+  controls.update(); return true
+}
+const still = q.has('still'), t0 = performance.now(); let lastT = t0
+renderer.setAnimationLoop(() => { const now = performance.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now; if (!(!still && tourStep(now, dt))) controls.update(); if (!still) water.tick((now - t0) / 1000); if (dirty || !still) { dirty = false; renderer.render(scene, camera); document.title = 'Playable Sausalito: view test (drawn)' } })
 </script>
 </body>
 </html>

@@ -59,5 +59,8 @@ is marked (esimv1) and is also noted there.
 - [ ] The news panel is a list of text; show it better (on the timeline, on the map, by issue).
 - [ ] Options in front of people: the ten notes in that entry. Waits on the first question.
 
+- [x] A tour when the page is left alone, and a fourth, dark look (`devlog/20261123-a-tour-and-a-fourth-look.md`). Watch the tour run and tune it; a turn-rate limit and a bank, as in bay-area-twin.
+- [ ] Group the layers panel by kind (ground and water, forces, living things, the built town, people and rules); a "layers apart" way of looking.
+
 ## Later
 - [ ] Who maintains it. Tabled on 2026-11-22.
