@@ -16,10 +16,11 @@ tray of changes, no split screen. `devlog/20261123-propositions.md`.
 4. [x] First propositions with something to see: raise Gate 5 Road; remove the floating homes; cut down the trees; four storeys in the Marinship; ban tourists.
 5. [x] Four dials (homes, money, nature, safety) that move, each with the reason in a sentence, marked as computed or as a rule of thumb.
 5b. [ ] Check the computed flood against where water was reported on 22 November; draw a raised road as raised.
+5c. [x] Hydrology: mapped creeks and drainage lines computed from the lidar ground (`devlog/20261123-hydrology.md`). Next: rain in the flood, running down these lines.
 6. [ ] More propositions: a tide gate at the Coloma Street canal, a wall along the Marinship, the 724 homes on the listed sites, close Bridgeway to cars, pave the hills.
 7. [ ] Things that move: a ferry, cars, people, so a change like "ban tourists" can be seen.
 8. [ ] The news beside the propositions: each chip shows what the papers said about its issue.
-8b. [ ] Move the page to the house stack (Svelte 5, Tailwind, Vite) once its shape settles; personas and user stories in the devlog.
+8b. [ ] Later, not now (Anselm, 23 November: "it is fine if we are not using svelte yet"; the page is for showing funders pretty visuals and ideas, and "will eventually be reworked into something more of an appliance"): the house stack (Svelte 5, Tailwind, Vite); personas and user stories in the devlog.
 9. [ ] Watch it on a phone and tune: the tour, the chips, the weight of the trees.
 10. [ ] Words: a proposition typed in plain language matched to one of the list.
 

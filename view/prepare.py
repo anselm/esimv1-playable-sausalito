@@ -42,7 +42,7 @@ def num(s):
     try: return float(str(s).split()[0].replace("m", ""))
     except Exception: return None
 PLACEHOLDER = {"houseboat": 4.5, "shed": 3, "garage": 3, "garages": 3, "roof": 3, "carport": 3, "commercial": 8, "retail": 6, "industrial": 9, "warehouse": 9, "apartments": 10, "hotel": 10, "church": 10, "religious": 10, "school": 7}
-buildings, roads, piers, tagged = [], [], [], 0
+buildings, roads, piers, creeks, tagged = [], [], [], [], 0
 for e in ways:
     xy = []
     for _ in e["geometry"]:
@@ -67,6 +67,7 @@ for e in ways:
         if t.get("tunnel") and t.get("tunnel") != "no": r["u"] = 1
         roads.append(r)
     elif t.get("man_made") == "pier": piers.append({"area": xy[0] == xy[-1] and len(xy) > 3, "p": xy})
+    elif "waterway" in t: creeks.append({"k": t["waterway"], "n": t.get("name", ""), "u": 1 if t.get("tunnel") in ("yes", "culvert") else 0, "p": xy})
 # ---- heights from Microsoft's Global ML Building Footprints (CDLA Permissive 2.0) -----------------------------
 # cache/ms_qk023010203.csv.gz is the quadkey file covering the window (one GeoJSON feature per line, height in
 # metres, -1 where Microsoft has none; listed in its dataset-links.csv). Microsoft estimated these heights; the
@@ -168,7 +169,48 @@ if above is not None:
         if all(v is not None for v in z): r["z"] = z; decks += 1
     print(f"bridges: {sum(1 for r in roads if r.get('b'))} road pieces are bridges, {decks} with a deck height from lidar; {sum(1 for r in roads if r.get('u'))} are tunnels")
 
-json.dump({"window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2), "anchor": WIN["anchor"], "south": WIN["south"], "west": WIN["west"], "north": WIN["north"], "east": WIN["east"]},
+# ---- where rain runs: drainage lines computed from the ground ------------------------------------------------
+# Every cell of the four-metre ground is given the neighbour its water would leave by, found by letting water
+# rise from the bay and the window's edges and noting from which side each cell is first reached (the
+# "priority flood" of Barnes, Lehman and Mulla 2014), which also carries water across hollows. The area draining
+# through each cell is then summed downhill. Lines are drawn where 2 hectares or more drain through. This is the
+# bare ground's shape: in town most of these run in pipes and culverts, and no pipe is known to this file.
+import heapq
+flat = g.ravel(); n_cells = flat.size; down = np.full(n_cells, -1, np.int64); done = np.zeros(n_cells, bool); order = []
+sea = water + 0.07; heap = []
+for k in np.nonzero(flat <= sea)[0]: done[k] = True
+edge = np.zeros((ny, nx), bool); edge[0, :] = edge[-1, :] = edge[:, 0] = edge[:, -1] = True
+seeds = np.nonzero((flat <= sea) | edge.ravel())[0]
+for k in seeds: done[k] = True; heapq.heappush(heap, (float(flat[k]), int(k)))
+NB = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+while heap:
+    z, k = heapq.heappop(heap); order.append(k); j, i = divmod(k, nx)
+    for dj, di in NB:
+        jj, ii = j + dj, i + di
+        if 0 <= jj < ny and 0 <= ii < nx:
+            m = jj * nx + ii
+            if not done[m]: done[m] = True; down[m] = k; heapq.heappush(heap, (max(float(flat[m]), z + 1e-4), m))
+acc = np.ones(n_cells, np.float64)
+for k in reversed(order):
+    if down[k] >= 0: acc[down[k]] += acc[k]
+CH = 2.0 * 10000 / (RES * RES)                             # cells in 2 hectares
+chan = (acc >= CH) & (flat > sea); has_up = np.zeros(n_cells, bool)
+for k in np.nonzero(chan)[0]:
+    if down[k] >= 0 and chan[down[k]]: has_up[down[k]] = True
+drains, used = [], np.zeros(n_cells, bool)
+for k in sorted(np.nonzero(chan & ~has_up)[0], key=lambda c: -acc[c]):
+    path, c = [], int(k)
+    while c >= 0 and flat[c] > sea:
+        path.append(c)
+        if used[c]: break
+        used[c] = True; c = int(down[c])
+    if c >= 0 and flat[c] <= sea: path.append(c)
+    if len(path) >= 6:
+        pts = [[round((c % nx + 0.5) * RES, 1), round((ny - (c // nx) - 0.5) * RES, 1)] for c in path[::2] + [path[-1]]]
+        drains.append({"a": round(float(acc[path[-2] if len(path) > 1 else path[-1]]) * RES * RES / 10000, 1), "p": pts})
+print(f"drainage: {len(drains)} lines where 2 ha or more drain through; the largest carries {max(d['a'] for d in drains):.0f} ha; {len(creeks)} mapped waterways ({sum(c['u'] for c in creeks)} in culverts or tunnels)")
+
+json.dump({"creeks": creeks, "drains": drains, "window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2), "anchor": WIN["anchor"], "south": WIN["south"], "west": WIN["west"], "north": WIN["north"], "east": WIN["east"]},
            "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged, "heights_microsoft": from_ms, "heights_lidar": from_lidar,
            "buildings": buildings, "roads": roads, "piers": piers}, open(os.path.join(OUT, "town.json"), "w"), separators=(",", ":"))
 print(f"ground {nx}x{ny} at {RES} m, water level {water:.2f} m; {len(buildings)} buildings ({tagged} with a tagged height), {len(roads)} roads, {len(piers)} piers")

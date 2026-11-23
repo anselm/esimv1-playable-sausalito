@@ -9,6 +9,11 @@ const hue = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charC
 const ramp = (order, colours) => (v) => colours[Math.max(0, order.indexOf(v))] || '#999999'
 
 export const LAYERS = [
+  // two layers that come with the page's own data, in window metres: `local(town)` gives their shapes
+  { id: 'creeks', name: 'Creeks, as mapped', by: 'Streams and ditches from OpenStreetMap (© OpenStreetMap contributors). Paler where the map says the water runs in a culvert', colour: () => '#2b7fd1', width: (p) => 3,
+    local: (town) => (town.creeks || []).filter((c) => ['stream', 'river', 'ditch', 'drain', 'canal'].includes(c.k)).map((c) => ({ type: 'line', line: c.p, props: { name: c.n || 'a stream', culvert: c.u } })), field: 'name', on: true },
+  { id: 'drains', name: 'Where rain runs', by: 'Computed here from the 2018 lidar ground: the line water would take across the bare ground wherever 2 hectares or more drain through. In town most of this runs in pipes, which this does not know', colour: () => '#5aa9e6',
+    width: (p) => Math.min(9, 1.6 + Math.sqrt(p.hectares) * 0.45), local: (town) => (town.drains || []).map((d) => ({ type: 'line', line: d.p, props: { hectares: d.a, name: `${d.a} hectares drain through here` } })), field: 'name' },
   { id: 'zoning', name: 'Zoning', url: MARIN + 'Zoning_of_Sausalito/FeatureServer/123', field: 'Zoning', by: "Sausalito's zoning map as hosted by Marin County, 2023",
     colour: (v) => /^R/.test(v) ? `hsl(${48 - Math.min(30, parseFloat(String(v).split('-')[1]) || 0) * 4} 85% 60%)` : /^C/.test(v) ? '#e2574c' : /^(I|W)$/.test(v) ? '#8e6bbf' : /^(OS|PP|PR|OA)$/.test(v) ? '#58a55c' : /^PI$/.test(v) ? '#4f86c6' : '#999999',
     say: (v) => ({ R: 'residential', C: 'commercial', I: 'industrial', W: 'waterfront', OS: 'open space', PP: 'public park', PI: 'public and institutional', OA: 'open area', PR: 'public recreation', H: 'houseboats' }[String(v).split('-')[0].replace(/[RW-]?$/, (m) => m)] || ({ CR: 'commercial residential', CC: 'central commercial', CW: 'commercial waterfront', CN: 'neighbourhood commercial', CS: 'commercial service' }[String(v).split('-')[0]]) || '') },

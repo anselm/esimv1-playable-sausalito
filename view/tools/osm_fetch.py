@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch buildings, roads and piers for the window from OpenStreetMap, into cache/osm_raw.json.
+"""Fetch buildings, roads, piers and waterways for the window from OpenStreetMap, into cache/osm_raw.json.
 
 Asks the Overpass mirrors in turn, with a pause that grows after each refusal. The data is
 (c) OpenStreetMap contributors, under the Open Database License.
@@ -7,7 +7,7 @@ Asks the Overpass mirrors in turn, with a pause that grows after each refusal. T
 import json, os, sys, time, urllib.request, urllib.parse
 HERE = os.path.dirname(os.path.abspath(__file__)); W = json.load(open(os.path.join(HERE, "..", "window.json")))
 box = f'{W["south"]},{W["west"]},{W["north"]},{W["east"]}'
-q = f'[out:json][timeout:120];(way["building"]({box});way["highway"]({box});way["man_made"="pier"]({box}););out tags geom;'
+q = f'[out:json][timeout:120];(way["building"]({box});way["highway"]({box});way["man_made"="pier"]({box});way["waterway"]({box}););out tags geom;'
 for i, m in enumerate(["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"] * 2):
     try:
         r = urllib.request.urlopen(urllib.request.Request(m, data=urllib.parse.urlencode({"data": q}).encode(), headers={"User-Agent": "playable-place view tools"}), timeout=180)
