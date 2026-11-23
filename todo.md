@@ -19,6 +19,7 @@ tray of changes, no split screen. `devlog/20261123-propositions.md`.
 6. [ ] More propositions: a tide gate at the Coloma Street canal, a wall along the Marinship, the 724 homes on the listed sites, close Bridgeway to cars, pave the hills.
 7. [ ] Things that move: a ferry, cars, people, so a change like "ban tourists" can be seen.
 8. [ ] The news beside the propositions: each chip shows what the papers said about its issue.
+8b. [ ] Move the page to the house stack (Svelte 5, Tailwind, Vite) once its shape settles; personas and user stories in the devlog.
 9. [ ] Watch it on a phone and tune: the tour, the chips, the weight of the trees.
 10. [ ] Words: a proposition typed in plain language matched to one of the list.
 

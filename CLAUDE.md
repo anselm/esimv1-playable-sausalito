@@ -39,3 +39,10 @@ https://sausalito.exe.xyz/ (exe.dev VM `sausalito`, unit `sausalito.service`, po
 `deploy/serve.mjs`. `deploy/deploy.sh` puts the current folder there; it is run by hand on Anselm's say and a push does
 not deploy. Anselm: "i want to be able to show off the sausalito model live on the web even in the early stages".
 
+## Interface
+
+Open the harness's `house-ux` skill before changing the page. It was not opened for the first two days and the page had to
+be reworked on 2026-11-23 (`devlog/20261123-house-style.md`): one floating menu button at the top right, one panel open at a
+time, corners of 4 px or less, checked by screenshot in light and dark (`DARK=1 node view/tools/shot.mjs ...`). The page is
+still one HTML file with its own CSS, not Svelte and Tailwind; that move waits until the demo's shape settles.
+

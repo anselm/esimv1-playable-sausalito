@@ -19,7 +19,9 @@ ws.addEventListener('message', e => { const m = JSON.parse(e.data)
   if (m.method === 'Runtime.exceptionThrown') logs.push('EXC ' + (m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text || '').split('\n')[0])
   if (m.method === 'Runtime.consoleAPICalled' && ['error', 'warning'].includes(m.params.type)) logs.push(m.params.type + ' ' + m.params.args.map(a => a.value ?? a.description ?? '').join(' ').slice(0, 200)) })
 const send = (method, params = {}) => new Promise(res => { const i = ++id; pending.set(i, res); ws.send(JSON.stringify({ id: i, method, params })) })
-await send('Runtime.enable'); await send('Page.enable'); await send('Page.navigate', { url })
+await send('Runtime.enable'); await send('Page.enable')
+if (process.env.DARK) await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }] })   // DARK=1: the page as a dark-mode device sees it
+await send('Page.navigate', { url })
 const t0 = Date.now(), limit = Number(process.env.WAIT_MS || 20000)
 while (Date.now() - t0 < limit) { await sleep(500); const r = await send('Runtime.evaluate', { expression: 'document.title', returnByValue: true }); if (/\(drawn\)/.test(r.result?.value || '')) { await sleep(Number(process.env.SETTLE_MS || 1500)); break } }
 const gl = await send('Runtime.evaluate', { expression: `(()=>{const c=document.createElement('canvas').getContext('webgl2');const e=c&&c.getExtension('WEBGL_debug_renderer_info');return e?c.getParameter(e.UNMASKED_RENDERER_WEBGL):'none'})()`, returnByValue: true })
