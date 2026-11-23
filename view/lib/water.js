@@ -4,7 +4,7 @@
 // depth, no current and no swell. It is not a wave model and should not be read as sea state.
 //
 //   const water = makeWater(THREE, { width, depth })
-//   water.set({ level_m, wind_ms, wind_from_deg, sunDir, sunColor, sky, color, calm })
+//   water.set({ level_m, wind_ms, wind_from_deg, sunDir, sunColor, sky, color, calm, mask })   mask: a texture, white where there is water
 //   water.tick(seconds)      // each frame
 
 export function makeWater(THREE, { width, depth }) {
@@ -13,6 +13,8 @@ export function makeWater(THREE, { width, depth }) {
     uSun: { value: new THREE.Vector3(0, 1, 0) }, uSunColor: { value: new THREE.Color(1, 1, 1) },
     uSky: { value: new THREE.Color(0.6, 0.75, 0.9) }, uColor: { value: new THREE.Color(0.1, 0.3, 0.4) }, uCalm: { value: 0 },
   }])
+  // an optional mask: where the water actually is. Without one the sheet is drawn everywhere.
+  uniforms.uMask = { value: null }; uniforms.uUseMask = { value: 0 }; uniforms.uSize = { value: new THREE.Vector2(width, depth) }
   const mat = new THREE.ShaderMaterial({
     uniforms, fog: true,
     vertexShader: `
@@ -22,6 +24,7 @@ export function makeWater(THREE, { width, depth }) {
         #include <fog_vertex>
       }`,
     fragmentShader: `
+      uniform sampler2D uMask; uniform float uUseMask; uniform vec2 uSize;
       uniform float uTime, uSteep, uCalm; uniform vec2 uWind; uniform vec3 uSun, uSunColor, uSky, uColor;
       varying vec3 vWorld;
       #include <fog_pars_fragment>
@@ -29,6 +32,7 @@ export function makeWater(THREE, { width, depth }) {
       vec2 train(vec2 p, vec2 d, float L, float steep) { float k = 6.2831853 / L, c = sqrt(9.81 / k); return d * steep * cos(k * (dot(d, p) - c * uTime)); }
       vec2 rot(vec2 v, float a) { float s = sin(a), c = cos(a); return vec2(c * v.x - s * v.y, s * v.x + c * v.y); }
       void main() {
+        if (uUseMask > 0.5 && texture2D(uMask, (vWorld.xz + uSize * 0.5) / uSize).r < 0.5) discard;
         vec2 p = vWorld.xz; float d = distance(cameraPosition, vWorld), near = 1.0 - clamp(d / 1800.0, 0.0, 1.0), mid = 1.0 - clamp(d / 6000.0, 0.0, 0.75);
         // patches of rougher and smoother water, so the trains do not read as ruled lines
         float gust = 0.65 + 0.35 * sin(p.x * 0.0071 + 1.3 * sin(p.y * 0.0043 + uTime * 0.05)) * sin(p.y * 0.0063 - uTime * 0.03);
@@ -57,6 +61,7 @@ export function makeWater(THREE, { width, depth }) {
     if (o.sky) uniforms.uSky.value.copy(o.sky)
     if (o.color) uniforms.uColor.value.copy(o.color)
     if (o.calm != null) uniforms.uCalm.value = o.calm
+    if (o.mask !== undefined) { uniforms.uMask.value = o.mask; uniforms.uUseMask.value = o.mask ? 1 : 0 }
   }
   mesh.tick = (t) => { uniforms.uTime.value = t }
   return mesh
