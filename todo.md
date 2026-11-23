@@ -54,7 +54,10 @@ is marked (esimv1) and is also noted there.
 - [ ] Words. "i should probably use the term scenario rather than model ... will want to make sure i am consistent in my language". The README and the essay say "model" throughout; change them once he settles it.
 
 - [x] A clean page: panels closed behind three buttons, a one-line readout (23 November).
-- [ ] A "layers" button: parcels, zoning, housing sites, flood maps, evacuation zones, hazards, census, each fetched from its publisher; a card for a clicked building or lot.
+- [x] A "layers" button with fourteen public maps read from their publishers, and a card for a clicked building or spot (`devlog/20261123-layers-and-options.md`).
+- [ ] More layers: census blocks, the housing sites lists, NOAA's flood depths, the bay floor, the county's tide sensor if its readings are public.
+- [ ] The news panel is a list of text; show it better (on the timeline, on the map, by issue).
+- [ ] Options in front of people: the ten notes in that entry. Waits on the first question.
 
 ## Later
 - [ ] Who maintains it. Tabled on 2026-11-22.

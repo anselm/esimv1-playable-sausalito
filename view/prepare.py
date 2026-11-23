@@ -168,7 +168,7 @@ if above is not None:
         if all(v is not None for v in z): r["z"] = z; decks += 1
     print(f"bridges: {sum(1 for r in roads if r.get('b'))} road pieces are bridges, {decks} with a deck height from lidar; {sum(1 for r in roads if r.get('u'))} are tunnels")
 
-json.dump({"window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2), "anchor": WIN["anchor"]},
+json.dump({"window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2), "anchor": WIN["anchor"], "south": WIN["south"], "west": WIN["west"], "north": WIN["north"], "east": WIN["east"]},
            "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged, "heights_microsoft": from_ms, "heights_lidar": from_lidar,
            "buildings": buildings, "roads": roads, "piers": piers}, open(os.path.join(OUT, "town.json"), "w"), separators=(",", ":"))
 print(f"ground {nx}x{ny} at {RES} m, water level {water:.2f} m; {len(buildings)} buildings ({tagged} with a tagged height), {len(roads)} roads, {len(piers)} piers")
