@@ -386,7 +386,10 @@ function drawNews() {
 async function loadNews() {
   try {
     const [issues, facts] = await Promise.all([fetch(`${INHALER}/beats/${BEAT}/issues`).then((r) => r.json()), fetch(`${INHALER}/beats/${BEAT}/facts?limit=1000`).then((r) => r.json())])
-    news.issues = issues; news.facts = facts
+    // This page leaves out reports of arrests and alleged crimes by named people: they are news, the inhaler keeps them,
+    // and a picture of a town's ground is not the place to repeat an allegation. Anselm may change this.
+    const QUIET = /\b(arrest|burglar|alleged|charged with|indict)/i, quiet = (f) => QUIET.test(f.claim || '')
+    news.issues = issues.filter((x) => !QUIET.test(`${x.title} ${x.summary}`)).map((x) => ({ ...x, facts: x.facts.filter((f) => !quiet(f)) })); news.facts = facts.filter((f) => !quiet(f))
     const seen = new Set(), mat = new THREE.MeshBasicMaterial({ color: 0xe0563a })
     for (const f of facts) { const p = spot(f); if (!p) continue; const key = `${Math.round(p.x)},${Math.round(p.y)}`; if (seen.has(key)) continue; seen.add(key)
       const g = groundAt(p.x, p.y), pole = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 46, 6), mat), head = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 8), mat)
