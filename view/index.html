@@ -45,6 +45,8 @@
   .panel { z-index: 3; } .chip { z-index: 2; } .mark { z-index: 1; }
   .mark { position: fixed; transform: translate(-50%, -50%); min-width: 13px; height: 13px; box-sizing: border-box; padding: 0 2px; border-radius: 7px; border: 1.5px solid var(--accent); background: var(--panel); color: var(--accent); font-size: 9px; line-height: 10px; font-weight: 700; text-align: center; cursor: pointer; }
   .mark:hover { background: var(--accent); color: #fff; }
+  .mark .hl { position: absolute; left: 16px; top: -4px; max-width: 230px; padding: 1px 6px; border-radius: 3px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); font-size: 11px; line-height: 15px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; backdrop-filter: blur(6px); }
+  .mark.quiet .hl { display: none; } .mark:hover .hl { display: block; max-width: 420px; z-index: 5; }
   .dock { position: fixed; transform: translate(-50%, -50%); font-size: 11px; font-weight: 600; color: var(--ink); text-shadow: 0 0 3px var(--panel), 0 0 3px var(--panel), 0 0 6px var(--panel); pointer-events: none; white-space: nowrap; }
   #layers .go { cursor: pointer; color: var(--accent); }
   @media (max-width: 720px) { #dials { bottom: auto; top: 62px; gap: 8px; } }
@@ -68,6 +70,7 @@
 <div id="ctl" class="panel" hidden>
   <div class="row"><label>look</label><span id="looks"></span></div>
   <div class="row"><label>view</label><span id="cams"></span></div>
+  <div class="row" style="font-size:11px;opacity:.75">Drag to move, wheel or pinch to zoom toward the pointer, right-drag or two fingers to turn, double click to go there.</div>
   <div class="row"><label>trees</label><input id="treesOn" type="checkbox" checked> <span id="treeNote" style="opacity:.75"></span></div>
   <div class="row"><label>water</label><button id="live">now</button><span id="waterNote" style="flex:1;font-size:11px;opacity:.85"></span></div>
   <div class="row"><label>date</label><input id="day" type="range" min="1" max="365" step="1"><output id="dayo"></output></div>
@@ -142,6 +145,9 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera(38, 1, 5, 40000)
 const controls = new OrbitControls(camera, renderer.domElement)
+// the hand is a map's: drag moves the ground under the pointer, the wheel zooms toward the pointer, the right button (or two fingers) turns the view
+controls.screenSpacePanning = false; controls.zoomToCursor = true; controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }; controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }
+controls.listenToKeyEvents(window); controls.keyPanSpeed = 24
 controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 60; controls.maxDistance = 16000; controls.enableDamping = true; controls.dampingFactor = 0.12
 const sun = new THREE.DirectionalLight(0xffffff, 3)
 sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096)
@@ -449,9 +455,10 @@ async function loadNews() {
     const at = new Map(), host = document.getElementById('marks'), stems = []
     for (const f of news.facts) { const p = spot(f); if (!p) continue; const key = `${Math.round(p.x / 40)},${Math.round(p.y / 40)}`; if (!at.has(key)) at.set(key, { x: p.x, y: p.y, facts: [] }); at.get(key).facts.push(f) }
     for (const mk of at.values()) { mk.g = Math.max(groundAt(mk.x, mk.y), state.level); mk.facts.sort((a, b) => factDay(b) - factDay(a)); stems.push(X(mk.x), mk.g, Z(mk.y), X(mk.x), mk.g + 34, Z(mk.y))
-      const el = document.createElement('div'); el.className = 'mark'; el.title = mk.facts[0].place || 'in the news'; el.textContent = mk.facts.length > 1 ? mk.facts.length : ''; el.hidden = true
-      el.onclick = () => showCard(esc(mk.facts[0].place || 'In the news here'), mk.facts.slice(0, 8).map((f) => `<span class="m">${dayWords(factDay(f))}, ${esc(f.source)}:</span> ${esc(f.claim)} <a href="${esc(f.url)}" target="_blank" rel="noopener">source</a>`).concat(mk.facts.length > 8 ? [`<span class="m">and ${mk.facts.length - 8} more</span>`] : []))
+      const el = document.createElement('div'); el.className = 'mark'; el.title = mk.facts[0].place || 'in the news'; el.innerHTML = `${mk.facts.length > 1 ? mk.facts.length : ''}<span class="hl">${esc(mk.facts[0].claim)}</span>`; el.hidden = true
+      el.onclick = () => showCard(`In the news${mk.facts[0].place ? ' · ' + esc(mk.facts[0].place) : ''}`, mk.facts.slice(0, 8).map((f) => `<span class="m">${dayWords(factDay(f))}, ${esc(f.source)}:</span> ${esc(f.claim)} <a href="${esc(f.url)}" target="_blank" rel="noopener">source</a>`).concat(mk.facts.length > 8 ? [`<span class="m">and ${mk.facts.length - 8} more</span>`] : []))
       mk.el = el; host.append(el); news.marks.push(mk) }
+    news.marks.sort((a, b) => factDay(b.facts[0]) - factDay(a.facts[0]))                                // the newest report gets the room first
     news.stems.geometry.setAttribute('position', new THREE.Float32BufferAttribute(stems, 3))
     drawNews(); dirty = true
   } catch (e) { /* the page stands without the news */ }
@@ -517,7 +524,7 @@ function paintWash() {
   for (const def of LAYERS) { const row = document.createElement('label'); row.innerHTML = `<input type="checkbox"><span><b>${esc(def.name)}</b> <span class="m" data-n></span><br><span class="m">${esc(def.by)}</span><span data-k></span></span>`; host.append(row)
     const box = row.querySelector('input'), note = row.querySelector('[data-n]'), key = row.querySelector('[data-k]')
     box.onchange = async () => {
-      if (def.news) { note.textContent = 'asking…'; await newsReady; setNews(box.checked); note.innerHTML = news.marks.length ? `${news.marks.length} places · <span class="go">read the issues</span>` : 'the inhaler did not answer'; const go = note.querySelector('.go'); if (go) go.onclick = (e) => { e.preventDefault(); toggle('news', true) }; return }
+      if (def.news) { note.textContent = 'asking…'; await newsReady; setNews(box.checked); note.innerHTML = news.marks.length ? `${news.marks.reduce((a, m) => a + m.facts.length, 0)} reports at ${news.marks.length} places · <span class="go">read the issues</span>` : 'the inhaler did not answer'; const go = note.querySelector('.go'); if (go) go.onclick = (e) => { e.preventDefault(); toggle('news', true) }; return }
       if (box.checked) { note.textContent = 'asking…'; try { await layerOn(def); lay.on.add(def.id); const feats = lay.data.get(def.id); note.textContent = `${feats.length.toLocaleString('en')} shapes`
           const seen = new Map(); for (const f of feats) { const v = f.props[def.field]; if (!def.thin && f.type === 'area' && !seen.has(v) && seen.size < 9) seen.set(v, def.colour(v, f.props)) }
           key.innerHTML = seen.size > 1 || def.say ? '<br>' + [...seen].filter(([, col]) => col && !col.endsWith('00')).map(([v, col]) => `<span class="sw" style="background:${col}"></span>${esc(def.say?.(v, {}) || v)}`).join('') : '' }
@@ -526,6 +533,10 @@ function paintWash() {
       paintWash()
     }
     if (def.on && q.get(def.news ? 'news' : 'creeks') !== '0') { box.checked = true; def.news ? setTimeout(box.onchange, 0) : box.onchange() } } }
+// a double click brings that spot to the middle and comes a third closer
+renderer.domElement.addEventListener('dblclick', (e) => { ray.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera); const hit = ray.intersectObject(ground)[0]; if (!hit) return
+  const from = controls.target.clone(), off = camera.position.clone().sub(from), t0 = performance.now(), step = () => { const u = Math.min(1, (performance.now() - t0) / 500), k = u * u * (3 - 2 * u)
+    controls.target.lerpVectors(from, hit.point, k); camera.position.copy(controls.target).addScaledVector(off, 1 - 0.33 * k); dirty = true; if (u < 1) requestAnimationFrame(step) }; step(); document.getElementById('card').hidden = true })
 // what is known at a point: the building if one was hit, the ground's height, and every layer that has been read
 const within = (rings, x, y) => { let c = false; for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) if ((r[i][1] > y) !== (r[j][1] > y) && x < (r[j][0] - r[i][0]) * (y - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) c = !c; return c }
 const ray = new THREE.Raycaster(); let downAt = null
@@ -662,7 +673,8 @@ function setTide(k) { play.tide = k; if (TIDES[k].level) { state.live = false; s
 const chipAt = new THREE.Vector3()
 const overAt = new THREE.Vector3(), over = (el, x, g, z) => { overAt.set(x, g, z).project(camera); const ok = overAt.z < 1 && Math.abs(overAt.x) < 1 && Math.abs(overAt.y) < 1; el.style.display = ok && !q.has('bare') ? '' : 'none'; if (ok) { el.style.left = `${(overAt.x + 1) / 2 * innerWidth}px`; el.style.top = `${(1 - overAt.y) / 2 * innerHeight}px` } }
 function placeChips() {
- if (news.on) for (const mk of news.marks) over(mk.el, X(mk.x), mk.g + 34, Z(mk.y))
+ const said = [...document.querySelectorAll('.chip')].filter((c) => c.style.display !== 'none').map((c) => [parseFloat(c.style.left) - 60, parseFloat(c.style.top) - 10])   // not under a proposition's chip
+ if (news.on) for (const mk of news.marks) { over(mk.el, X(mk.x), mk.g + 34, Z(mk.y)); const x = parseFloat(mk.el.style.left), y = parseFloat(mk.el.style.top), room = mk.el.style.display !== 'none' && x < innerWidth - 120 && !said.some(([a, b]) => Math.abs(a - x) < 250 && Math.abs(b - y) < 20); if (room) said.push([x, y]); mk.el.classList.toggle('quiet', !room) }
  for (const L of lay.labels) if (!L.el.hidden) over(L.el, X(L.x), state.level + 14, Z(L.y))
  const put = []
  for (const c of document.querySelectorAll('.chip')) { const p = PROPS.find((x) => x.id === c.dataset.id); chipAt.set(X(p.at[0]), groundAt(p.at[0], p.at[1]) + 45, Z(p.at[1])).project(camera)

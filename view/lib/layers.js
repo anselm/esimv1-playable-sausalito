@@ -10,7 +10,7 @@ const ramp = (order, colours) => (v) => colours[Math.max(0, order.indexOf(v))] |
 
 export const LAYERS = [
   // the news is a layer like the others: the page asks the inhaler (a separate service) and marks the places it names
-  { id: 'news', name: 'News', by: 'Places named in local news, notices and public posts, as read by the inhaler. Click a mark for what was said there; nothing is checked for truth', news: true, on: true, colour: () => null },
+  { id: 'news', name: 'News', by: 'What local news, notices and public posts said, as read by the inhaler, shown where it happened: the newest report beside each mark, the rest on a click. Reports that name no place are under "read the issues". Nothing is checked for truth', news: true, on: true, colour: () => null },
   // two layers that come with the page's own data, in window metres: `local(town)` gives their shapes
   { id: 'creeks', name: 'Creeks, as mapped', by: 'Streams and ditches from OpenStreetMap (© OpenStreetMap contributors). Paler where the map says the water runs in a culvert', colour: () => '#2b7fd1', width: (p) => 3,
     local: (town) => (town.creeks || []).filter((c) => ['stream', 'river', 'ditch', 'drain', 'canal'].includes(c.k)).map((c) => ({ type: 'line', line: c.p, props: { name: c.n || 'a stream', culvert: c.u } })), field: 'name', on: true },

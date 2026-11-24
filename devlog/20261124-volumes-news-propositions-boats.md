@@ -69,3 +69,15 @@ budget by line (a real budget dial), the sewer district's pipe ages, the school 
 - The lid is one height for every district; per-district limits are not read.
 - Curtains and lids are not sorted against the water's transparency from every angle.
 - Seen in screenshots, light and dark, wide and phone width; not on a real phone.
+
+## Later the same day: the hand, and the news itself
+
+Anselm: "it is a bit hard to move the focal point in the 3d view, i can zoom in but i cannot pan ... what
+if we zoom to where the mouse is? or what are conventions here?" The controls now follow the convention of
+web maps: drag moves the ground, the wheel or a pinch zooms toward the pointer, right-drag or two fingers
+turns the view, arrow keys move, a double click goes to the spot. Zoom toward a pointer was checked with
+synthetic wheel events; dragging and touch were not checked by hand.
+
+Anselm: "for news - i am less interested in the named places and more interested in the actual news itself
+about that place". Each mark now carries the newest report's own words beside it where there is room (the
+newest reports get the room first), the full sentence on hover, and all reports on a click.
