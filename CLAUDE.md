@@ -6,7 +6,7 @@ deploy) comes from the harness and is not repeated here.
 ## What this is
 
 The Sausalito Model (its name since 2026-11-23, when Anselm said "some people don't like 'playable'"; before that, Playable
-Sausalito; the folder, the repository `esimv1-playable-sausalito` and the dated devlog entries keep the old word). A model of
+Sausalito; the repository is `esimv1-sausalito-model` since 2026-11-24; the folder and the dated devlog entries keep the old word). A model of
 Sausalito, California, that people can try things on: a simulation of the town that a resident or
 an official can set conditions on, run forward and compare. It is public, free and open
 source. It is also the first scenario kept outside the esimv1 repository, so it tests
@@ -15,7 +15,7 @@ sketch: a story, an essay and a chore list, with no simulation yet. Not deployed
 
 ## Where things are
 
-- Code: this folder. Repo: `anselm/esimv1-playable-sausalito` (public; created 2026-11-22 as `playable-sausalito` and renamed the same day with the other esimv1 repositories; the folder keeps its name).
+- Code: this folder. Repo: `anselm/esimv1-sausalito-model` (public; created 2026-11-22 as `playable-sausalito`, then `esimv1-playable-sausalito`, renamed 2026-11-24 on Anselm's word "Rename repo"; GitHub redirects the old names; the folder keeps its name).
 - Devlog: `devlog/` (dated entries; read the tail first).
 - Chores: `todo.md`. Engine chores marked (esimv1) are done in
   `~/projects/2026/earth-simulator-1`, which has its own room and rules.
