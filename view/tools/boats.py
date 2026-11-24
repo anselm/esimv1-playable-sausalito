@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Boats as the 2018 lidar saw them: view/data/boats.bin from cache/dsm1.bin.
+"""Boats as the newest lidar saw them: view/data/boats.bin from cache/dsm2025.bin (NOAA's 2025 San Francisco Bay
+and Delta lidar, flown 27 September 2025 here), or from cache/dsm1.bin (2018) when that is all there is.
+The 2025 flight covers the shore and the harbors but not the middle of Richardson Bay, so nothing is drawn
+out there; the harbormaster counted two boats anchored out in August 2026.
 
 Over the water (the 4 m ground at the bay's level), outside building outlines and away from piers, every
 connected patch of one-metre cells where the highest lidar return stands 0.8 m or more above the water is
@@ -16,7 +19,9 @@ town = json.load(open(os.path.join(VIEW, "data", "town.json"))); W = town["windo
 nx, ny, RES, water = W["nx"], W["ny"], W["res"], W["water_m"]; N = nx * RES
 g = np.fromfile(os.path.join(VIEW, "data", "ground.bin"), dtype="<i2").reshape(ny, nx) / 10
 wet = np.repeat(np.repeat(g <= water + 0.06, RES, axis=0), RES, axis=1)
-top = np.fromfile(os.path.join(CACHE, "dsm1.bin"), dtype="<f4").reshape(N, N)
+new = town.get("water_2025_m") is not None and os.path.exists(os.path.join(CACHE, "dsm2025.bin"))
+top = np.fromfile(os.path.join(CACHE, "dsm2025.bin" if new else "dsm1.bin"), dtype="<f4").reshape(N, N)
+level = town.get("water_2025_m") if town.get("water_2025_m") is not None and os.path.exists(os.path.join(CACHE, "dsm2025.bin")) else water
 block = np.zeros((N, N), bool)
 def box(xs, ys, grow):
     return int(max(0, min(xs) - grow)), int(min(N, max(xs) + grow + 1)), int(max(0, N - max(ys) - grow)), int(min(N, N - min(ys) + grow + 1))
@@ -45,7 +50,7 @@ for p in town["piers"]:                                  # piers and floats, 2.5
         xs = [q[0] for q in p["p"]]; ys = [q[1] for q in p["p"]]; c0, c1, r0, r1 = box(xs, ys, 1)
         if c1 > c0 and r1 > r0:
             cc, rr = np.meshgrid(np.arange(c0, c1) + 0.5, N - (np.arange(r0, r1) + 0.5)); block[r0:r1, c0:c1] |= inside(cc, rr, p["p"])
-up = np.nan_to_num(top - water, nan=0.0)
+up = np.nan_to_num(top - level, nan=0.0)
 mask = wet & ~block & (up >= 0.8) & (up < 40)
 seen = np.zeros((N, N), bool); out = []
 rows, cols = np.nonzero(mask)
@@ -69,4 +74,4 @@ for r0, c0 in zip(rows.tolist(), cols.tolist()):
 o = np.array([[round(x * 10), round(y * 10), round(l * 10), round(w * 10), round(min(h, 40) * 10), round(d * 10) % 1800] for x, y, l, w, h, d in out], dtype="<u2")
 o.tofile(os.path.join(VIEW, "data", "boats.bin"))
 L = np.array([b[2] for b in out]); H = np.array([b[4] for b in out])
-print(f"boats {len(out)}: length median {np.median(L):.1f} m, nine tenths under {np.percentile(L, 90):.1f} m; tallest return median {np.median(H):.1f} m, {int((H > 6).sum())} over 6 m (masts)")
+print(f"from the {2025 if new else 2018} flight, water at {level:.2f} m;", f"boats {len(out)}: length median {np.median(L):.1f} m, nine tenths under {np.percentile(L, 90):.1f} m; tallest return median {np.median(H):.1f} m, {int((H > 6).sum())} over 6 m (masts)")

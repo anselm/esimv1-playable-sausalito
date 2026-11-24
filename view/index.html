@@ -77,10 +77,10 @@
   <div class="row"><label>time</label><input id="hour" type="range" min="0" max="24" step="0.25"><output id="houro"></output></div>
 </div>
 <div id="credit" class="panel" hidden>Ground: US Geological Survey 3DEP one-metre lidar elevation, 2018 survey, drawn at 4 m.
-  Trees: whatever stands 3 m or more above the ground outside buildings in the same survey's points (US Geological Survey), one body per 7 m of canopy.
+  Trees: whatever stands 3 m or more above the ground outside buildings in the lidar points (NOAA's flight of 27 September 2025 over the town and the shore; the US Geological Survey's 2018 survey on the western hills), one body per 7 m of canopy.
   Creeks are OpenStreetMap's, and the fainter drainage lines under "layers" are computed here from the lidar ground. Roads are OpenStreetMap's lines drawn as geometry on the ground, as wide as their lanes on the map or as their class usually is; bridges stand at the height the lidar saw. Buildings, roads and piers: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.
   Building heights: <span id="tagged"></span>. Clock time is Pacific Standard Time.
-  Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. Ground below that level shows wet whether or not the bay can reach it; walls, drains and pumps are not in the picture. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation. Boats: each patch of 2018 lidar returns standing over the water, away from buildings and piers, is drawn as one hull, as long and wide as the patch and lying the way it lies, with a mast as tall as its tallest return or a cabin where it was low. Boats that touch count as one, and which end is the bow is a guess. Floating homes are OpenStreetMap's outlines; where the lidar gave no height theirs is a placeholder. Ferries and buses: Golden Gate Ferry and Golden Gate Transit, drawn where their public timetable puts them at the time on the clock, at a steady speed between stops; they are not tracked, and holiday timetables are left out. Small round marks: places named in the news the inhaler has read.</div>
+  Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. Ground below that level shows wet whether or not the bay can reach it; walls, drains and pumps are not in the picture. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation. Boats: each patch of lidar returns from the flight of 27 September 2025 standing over the water, away from buildings and piers, is drawn as one hull, as long and wide as the patch and lying the way it lies, with a mast as tall as its tallest return or a cabin where it was low. Boats that touch count as one, and which end is the bow is a guess. That flight did not cover the middle of Richardson Bay, so no boats are drawn out there. Floating homes are OpenStreetMap's outlines; where the lidar gave no height theirs is a placeholder. Ferries and buses: Golden Gate Ferry and Golden Gate Transit, drawn where their public timetable puts them at the time on the clock, at a steady speed between stops; they are not tracked, and holiday timetables are left out. Small round marks: places named in the news the inhaler has read.</div>
 
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
 <script type="module">
@@ -223,7 +223,7 @@ const bGeo = new THREE.BufferGeometry(), bParts = []                 // per buil
     let mean = 0; for (const v of p) mean += groundAt(v[0], v[1]); mean /= p.length
     // a measured height stands above the ground under the building; an estimate is drawn from the high side as before
     if (b.k === 'houseboat' && b.t === 0) b.h = Math.round((3.4 + hash(bi) * 3.0) * 10) / 10              // no measured height: one or two low storeys, a placeholder that varies
-    const base = lo - 0.5, top = (b.k === 'houseboat' ? lo : b.t === 3 ? mean : Math.min(hi, lo + 9)) + b.h, first = pos.length / 3
+    const base = lo - 0.5, top = (b.k === 'houseboat' ? lo : b.t >= 3 ? mean : Math.min(hi, lo + 9)) + b.h, first = pos.length / 3
     for (let i = 0; i < p.length; i++) { const a = p[i], c = p[(i + 1) % p.length]
       pos.push(X(a[0]), base, Z(a[1]), X(c[0]), base, Z(c[1]), X(c[0]), top, Z(c[1]), X(a[0]), base, Z(a[1]), X(c[0]), top, Z(c[1]), X(a[0]), top, Z(a[1])) }
     const walls = pos.length / 3 - first
@@ -337,7 +337,7 @@ let trees = null, treeRand = null
       e.set(0, r * 6.283, 0); q4.setFromEuler(e)
       m.compose(new THREE.Vector3(X(x), g + h * 0.5, Z(y)), q4, new THREE.Vector3(rad, h * 0.5, rad)); trees.setMatrixAt(i, m) }
     trees.castShadow = true; trees.receiveShadow = true; trees.frustumCulled = false; scene.add(trees) } }
-// ---- moored boats, as the 2018 lidar saw them (view/tools/boats.py): a hull as long and wide as each patch of
+// ---- moored boats, as the 2025 lidar saw them (view/tools/boats.py): a hull as long and wide as each patch of
 // returns over the water, lying the way the patch lies, with a mast as tall as its tallest return or a cabin if it was low
 let moored = null
 { const buf = await fetch('data/boats.bin').then(r => r.ok ? r.arrayBuffer() : null).catch(() => null)
@@ -561,7 +561,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   const hb = ray.intersectObject(buildings)[0], hg = ray.intersectObject(ground)[0], hit = hb && (!hg || hb.distance < hg.distance + 2) ? hb : hg; if (!hit) return
   const x = hit.point.x + SX / 2, y = SY / 2 - hit.point.z, rows = []
   if (hit === hb) { const v = hb.face.a, bi = bParts.findIndex(([first, walls, roof]) => v >= first && v < first + walls + roof), b = town.buildings.filter((q0) => q0.p.length >= 3)[bi]
-    if (b) rows.push(`<b>A ${esc(b.k === 'yes' ? 'building' : b.k.replace(/_/g, ' '))}</b>, ${b.h} m tall <span class="m">(${['a placeholder', "OpenStreetMap's tag", "Microsoft's estimate", 'measured from the 2018 lidar'][b.t]}; outline © OpenStreetMap)</span>`)
+    if (b) rows.push(`<b>A ${esc(b.k === 'yes' ? 'building' : b.k.replace(/_/g, ' '))}</b>, ${b.h} m tall <span class="m">(${['a placeholder', "OpenStreetMap's tag", "Microsoft's estimate", 'measured from the 2018 lidar', 'measured from the 2025 lidar'][b.t]}; outline © OpenStreetMap)</span>`)
     if (b && b.k === 'houseboat') { let best = 30, who = null; for (const f of lay.data.get('docks') || []) { const d = Math.hypot(f.point[0] - x, f.point[1] - y); if (d < best) { best = d; who = f.props } }
       if (who) rows.push(`Nearest county address: <b>${esc(String(who.Formatted || '').trim().toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()))}</b> <span class="m">(Marin County address points, ${Math.round(best)} m away)</span>`) } }
   rows.push(`Ground ${groundAt(x, y).toFixed(1)} m above NAVD88 <span class="m">(USGS lidar, 2018)</span>${groundAt(x, y) < state.level ? ` · below the water drawn now (${state.level.toFixed(2)} m)` : ''}`)
@@ -632,7 +632,7 @@ const PROPS = [
   { id: 'boats', at: boatAt, short: 'Floating homes', ask: 'Retire one floating-home berth in ten as leases end?', about: `${boats.length} floating homes are drawn in this window, from OpenStreetMap. They are legal homes on leased berths, and part of what visitors come to see. Their shade and moorings lie over the shallow bay floor.`,
     apply(on) { for (const part of tenth) { part[6].gone = on; const pos = bGeo.attributes.position.array, [first, walls, roof] = part; for (let i = first; i < first + walls + roof; i++) pos[i * 3 + 1] = on ? -900 : bRest[i * 3 + 1] } bGeo.attributes.position.needsUpdate = true; if (!on) applyWater() },
     rules: [['homes', -1, `${tenth.length} of ${boats.length} homes gone (counted from the map).`, true], ['nature', 1, 'More light on the bay floor, where eelgrass grows; a guess.'], ['life', -1, 'Fewer of the homes people come to see, and fewer neighbours on each dock; a judgement.']] },
-  { id: 'green', at: [545050 - W.e0 - 600, 4190050 - W.n0 + 100], short: 'Street trees', ask: 'Plant street trees along the flat streets?', about: `${treeRand ? treeRand.length.toLocaleString('en') + ' canopy tops stand in the 2018 lidar, most of them on the hill.' : ''} The filled ground by the water has few.`,
+  { id: 'green', at: [545050 - W.e0 - 600, 4190050 - W.n0 + 100], short: 'Street trees', ask: 'Plant street trees along the flat streets?', about: `${treeRand ? treeRand.length.toLocaleString('en') + ' canopy tops stand in the lidar, most of them on the hill.' : ''} The filled ground by the water has few.`,
     apply(on) { plantStreets().visible = on },
     rules: [['nature', 1, () => `${plantStreets().count.toLocaleString('en')} trees drawn, one every 14 m along streets on ground below 14 m.`, true], ['life', 1, 'Shade on the flat streets; a rule of thumb.'], ['money', -1, 'Planting, watering and pruning are a yearly cost to the city; no figure is used.']] },
   { id: 'tall', at: shipyard, short: 'The Marinship', ask: 'Let buildings in the Marinship rise from 32 to 47 feet, with homes above?', about: "The working waterfront, on filled ground. Measure X on the November 2026 ballot asked for 47 feet in the industrial zone (the city's summary of it). Which way the vote went is not used here.",
@@ -700,10 +700,10 @@ mk('looks', LOOKS, 'look', applyLook); mk('cams', CAMS, 'cam', applyCam)
 const dayIn = document.getElementById('day'), hourIn = document.getElementById('hour'); dayIn.value = state.day; hourIn.value = state.hour
 dayIn.oninput = () => { state.day = +dayIn.value; goMoment(); if (news.tab === 'date') drawNews() }; hourIn.oninput = () => { state.hour = +hourIn.value; goMoment() }
 liveBtn.onclick = goLive
-{ const n = town.buildings.length, ms = town.heights_microsoft || 0, tg = town.heights_tagged, li = town.heights_lidar || 0, rest = n - ms - tg - li
-  document.getElementById('tagged').innerHTML = [li && `${li.toLocaleString()} of ${n.toLocaleString()} are measured from the 2018 lidar points (the median height of what stands inside each footprint)`, ms && `${ms.toLocaleString()} are Microsoft's estimates (Global ML Building Footprints)`, tg && `${tg} are OpenStreetMap tags`, rest && `<b>${rest.toLocaleString()} are placeholders</b>`].filter(Boolean).join(', ') }
+{ const n = town.buildings.length, li = town.buildings.filter((b) => b.t >= 3).length, l25 = town.heights_lidar_2025 || 0, ms = town.buildings.filter((b) => b.t === 2).length, tg = town.buildings.filter((b) => b.t === 1).length, rest = n - ms - tg - li
+  document.getElementById('tagged').innerHTML = [li && `${li.toLocaleString()} of ${n.toLocaleString()} are measured from lidar points (the median height of what stands inside each footprint): ${l25.toLocaleString()} from NOAA's flight of 27 September 2025, which covers the town and the shore, and the rest from the 2018 survey`, ms && `${ms.toLocaleString()} are Microsoft's estimates (Global ML Building Footprints)`, tg && `${tg} are OpenStreetMap tags`, rest && `<b>${rest.toLocaleString()} are placeholders</b>`].filter(Boolean).join(', ') }
 const treesOn = document.getElementById('treesOn'); if (q.get('trees') === '0') treesOn.checked = false
-if (trees) { trees.visible = treesOn.checked; document.getElementById('treeNote').textContent = `${treeRand.length.toLocaleString()} canopy tops from the 2018 lidar points`; treesOn.onchange = () => { trees.visible = treesOn.checked; renderer.shadowMap.needsUpdate = true; dirty = true } }
+if (trees) { trees.visible = treesOn.checked; document.getElementById('treeNote').textContent = `${treeRand.length.toLocaleString()} canopy tops from the lidar points`; treesOn.onchange = () => { trees.visible = treesOn.checked; renderer.shadowMap.needsUpdate = true; dirty = true } }
 else { treesOn.disabled = true; treesOn.checked = false; document.getElementById('treeNote').textContent = 'no canopy file' }
 controls.addEventListener('change', () => { dirty = true })
 function size() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); dirty = true }

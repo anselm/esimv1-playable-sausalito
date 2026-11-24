@@ -1,6 +1,8 @@
 """Grid lidar points to a surface: the highest return in each one-metre cell of the window.
 
-  python lidar_surface.py <folder of .laz in EPSG:3857> <out.bin>
+  python lidar_surface.py <folder of .laz> <out.bin> [EPSG code of the points, default 3857] [processes, default 24]
+
+Points already in UTM zone 10 north (26910, or 6339 which is the same grid on NAD83(2011), within centimetres) are used as they are.
 
 Writes float32, one cell per metre of the window (view/window.json), row 0 at the north edge, metres NAVD88, NaN where no point fell;
 and <out>.count.bin, uint16 points per cell. Points classed as noise (7, 18) are left out.
@@ -14,12 +16,13 @@ import json, os
 _W = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'window.json')))
 E0, N0, E1, N1 = _W['e0'], _W['n0'], _W['e1'], _W['n1']          # the window, UTM zone 10 north (EPSG:26910)
 NX, NY = E1 - E0, N1 - N0
+SRS = int(sys.argv[3]) if len(sys.argv) > 3 else 3857
 
 def one(path):
     las = laspy.read(path)
     cls = np.asarray(las.classification)
     keep = (cls != 7) & (cls != 18)
-    x, y = Transformer.from_crs(3857, 26910, always_xy=True).transform(np.asarray(las.x)[keep], np.asarray(las.y)[keep])
+    x, y = (np.asarray(las.x)[keep], np.asarray(las.y)[keep]) if SRS in (26910, 6339) else Transformer.from_crs(SRS, 26910, always_xy=True).transform(np.asarray(las.x)[keep], np.asarray(las.y)[keep])
     z = np.asarray(las.z)[keep]; c = cls[keep]
     col = np.floor(x - E0).astype(np.int64); row = np.floor(N1 - y).astype(np.int64)
     ok = (col >= 0) & (col < NX) & (row >= 0) & (row < NY)
@@ -34,8 +37,9 @@ def one(path):
 if __name__ == '__main__':
     files = sorted(glob.glob(sys.argv[1] + '/*.laz'))
     top = np.full(NX * NY, -np.inf, np.float32); cnt = np.zeros(NX * NY, np.uint32); classes = np.zeros(32, np.int64)
-    with ProcessPoolExecutor(24) as pool:
-        for r in pool.map(one, files, chunksize=16):
+    procs = int(sys.argv[4]) if len(sys.argv) > 4 else 24
+    with ProcessPoolExecutor(procs) as pool:
+        for r in pool.map(one, files, chunksize=16 if procs > 12 else 1):
             if r is None: continue
             u, t, n, cl = r
             top[u] = np.maximum(top[u], t); cnt[u] += n.astype(np.uint32); classes += cl

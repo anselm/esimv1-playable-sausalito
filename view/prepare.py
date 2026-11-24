@@ -126,7 +126,24 @@ if os.path.exists(dsm_path):
         sh("gdal_translate -q -of ENVI -ot Float32 dem1.tif dem1.bin")
     dem1 = np.fromfile(os.path.join(CACHE, "dem1.bin"), dtype="<f4").reshape(N1M, N1M)
     dem1 = np.where(dem1 < -1000, water, dem1)
-    above = np.fromfile(dsm_path, dtype="<f4").reshape(N1M, N1M) - dem1          # NaN where no return fell
+    top = np.fromfile(dsm_path, dtype="<f4").reshape(N1M, N1M); newer = np.zeros((N1M, N1M), bool); water25 = None
+    # A newer flight where there is one: NOAA's 2025 San Francisco Bay and Delta lidar (dataset 14673, public
+    # domain; flown 27 September 2025 here, three tiles on 30 August), gridded the same way into dsm2025.bin.
+    # It covers the town and the shore but not the western hills, so inside its tiles the surface is 2025's
+    # and elsewhere it stays 2018's. The bare ground stays the 2018 survey's everywhere. Over water inside the
+    # tiles, heights are taken above the water as that flight saw it (the median of its returns over open
+    # water), since a floating home rides the tide.
+    p25 = os.path.join(CACHE, "dsm2025.bin"); boxes = os.path.join(CACHE, "lidar2025", "boxes.json")
+    if os.path.exists(p25) and os.path.exists(boxes):
+        top25 = np.fromfile(p25, dtype="<f4").reshape(N1M, N1M)
+        for _, x0, y0, x1, y1 in json.load(open(boxes)):
+            c0, c1, r0, r1 = int(max(0, x0 - E0)), int(min(N1M, x1 - E0)), int(max(0, N1 - y1)), int(min(N1M, N1 - y0))
+            if c1 > c0 and r1 > r0: newer[r0:r1, c0:c1] = True
+        wet1 = np.repeat(np.repeat(g <= water + 0.06, RES, axis=0), RES, axis=1)
+        open_water = wet1 & newer & np.isfinite(top25) & (top25 < water + 3.5)
+        water25 = float(np.median(top25[open_water])); top = np.where(newer, top25, top); dem1 = np.where(wet1 & newer, water25, dem1)
+        print(f"2025 lidar: {newer.mean() * 100:.0f}% of the window is inside its tiles; its water stood at {water25:.2f} m NAVD88 (the 2018 survey's lowest ground is {water:.2f} m)")
+    above = top - dem1                                                           # NaN where no return fell
     bmask = np.zeros((N1M, N1M), bool); pairs = []
     for b in buildings:
         xs = np.array([q[0] for q in b["p"]]); ys = N1M - np.array([q[1] for q in b["p"]])     # rows count from the north edge
@@ -143,15 +160,15 @@ if os.path.exists(dsm_path):
         up = v[v >= 2.0]
         if len(up) < 0.3 * ins.sum(): continue
         h = float(np.median(up)); pairs.append((b["t"], b["h"], h))
-        b["h"] = round(min(h, 80.0), 1); b["t"] = 3; from_lidar += 1
+        b["h"] = round(min(h, 80.0), 1); b["t"] = 4 if newer[min(N1M - 1, (r0 + r1) // 2), min(N1M - 1, (c0 + c1) // 2)] else 3; from_lidar += 1
     def versus(kind, name):
         d = np.array([o - l for t, o, l in pairs if t == kind])
         if len(d): print(f"  {name} less lidar, {len(d)} buildings: median {np.median(d):+.1f} m, half within {np.percentile(np.abs(d), 50):.1f} m, nine tenths within {np.percentile(np.abs(d), 90):.1f} m")
-    hs = sorted(b["h"] for b in buildings if b["t"] == 3)
-    print(f"heights: {from_lidar} of {len(buildings)} measured from lidar; median {hs[len(hs)//2]} m, 95th percentile {hs[int(len(hs)*.95)]} m, tallest {hs[-1]} m")
+    hs = sorted(b["h"] for b in buildings if b["t"] >= 3)
+    print(f"heights: {sum(b['t'] == 4 for b in buildings)} from the 2025 flight; {from_lidar} of {len(buildings)} measured from lidar; median {hs[len(hs)//2]} m, 95th percentile {hs[int(len(hs)*.95)]} m, tallest {hs[-1]} m")
     versus(2, "Microsoft's estimate"); versus(1, "OpenStreetMap's tag"); versus(0, "the placeholder")
-    left = [b for b in buildings if b["t"] != 3]
-    print(f"  not measured: {len(left)} ({sum(b['k'] == 'houseboat' for b in left)} houseboats); of all {sum(b['k'] == 'houseboat' for b in buildings)} houseboats {sum(b['k'] == 'houseboat' and b['t'] == 3 for b in buildings)} measured")
+    left = [b for b in buildings if b["t"] < 3]
+    print(f"  not measured: {len(left)} ({sum(b['k'] == 'houseboat' for b in left)} houseboats); of all {sum(b['k'] == 'houseboat' for b in buildings)} houseboats {sum(b['k'] == 'houseboat' and b['t'] >= 3 for b in buildings)} measured")
 tagged = sum(b["t"] == 1 for b in buildings); from_ms = sum(b["t"] == 2 for b in buildings)
 
 # Bridge decks: a road the map calls a bridge is not on the bare ground. Its deck's height at each vertex is
@@ -211,7 +228,7 @@ for k in sorted(np.nonzero(chan & ~has_up)[0], key=lambda c: -acc[c]):
 print(f"drainage: {len(drains)} lines where 2 ha or more drain through; the largest carries {max(d['a'] for d in drains):.0f} ha; {len(creeks)} mapped waterways ({sum(c['u'] for c in creeks)} in culverts or tunnels)")
 
 json.dump({"creeks": creeks, "drains": drains, "window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2), "anchor": WIN["anchor"], "south": WIN["south"], "west": WIN["west"], "north": WIN["north"], "east": WIN["east"]},
-           "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged, "heights_microsoft": from_ms, "heights_lidar": from_lidar,
+           "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged, "heights_microsoft": from_ms, "heights_lidar": from_lidar, "heights_lidar_2025": sum(b["t"] == 4 for b in buildings), "water_2025_m": None if 'water25' not in dir() or water25 is None else round(water25, 2),
            "buildings": buildings, "roads": roads, "piers": piers}, open(os.path.join(OUT, "town.json"), "w"), separators=(",", ":"))
 print(f"ground {nx}x{ny} at {RES} m, water level {water:.2f} m; {len(buildings)} buildings ({tagged} with a tagged height), {len(roads)} roads, {len(piers)} piers")
 

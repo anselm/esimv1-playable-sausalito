@@ -116,3 +116,25 @@ anonymously today); using them needs a protobuf reader and probably a relay on t
   Commodore 11.
 Checked here: Marin County's building footprints have 128 outlines over the water in the floating-home
 area, traced from 2004 to 2014 photographs, with no heights; OpenStreetMap's 444 are the better set.
+
+## Evening: the 2025 lidar
+
+Anselm: "lets definitely switch to the most recent data ... lets do the best we can". Done for everything
+the 2025 flight covers. `view/tools/lidar2025.sh` fetches NOAA's 2025 San Francisco Bay and Delta lidar
+(dataset 14673, public domain) for the window: 67 tiles, 328 million points, 64 tiles flown 27 September
+2025 and three on 30 August. Its tiles cover 45 percent of the window: the town, the shore and the
+harbors, not the western hills and not the middle of Richardson Bay.
+
+- **Agreement with 2018.** On 2.2 million cells of bare ground the 2025 surface is 5 cm above the 2018 one
+  at the median. The bare ground itself stays the 2018 survey's everywhere.
+- **Buildings.** 6,033 of 6,449 heights are now from 2025 and 223 from 2018; 193 have no lidar height.
+  That is 160 fewer measured than before: inside the 2025 tiles a footprint with nothing standing in it
+  keeps its older estimate, which is right for a demolished building and wrong for a mis-drawn outline.
+- **Floating homes.** 407 of 444 measured, as height above the water the flight itself saw (0.41 m NAVD88,
+  the median of its returns over open water). The other 37 keep a placeholder.
+- **Boats.** 525, from 2025 alone, against 776 from 2018. Nothing is drawn in the middle of the bay, which
+  the flight did not cover; the harbormaster's count there was 2 in August 2026.
+- **Trees.** 181,759 canopy tops: 2025 inside the tiles, 2018 on the hills.
+
+Not done: the flight's own classification (it marks buildings and high vegetation) is not used, only the
+highest return per cell; the ground was not regridded from 2025; AIS and live vehicle positions wait.
