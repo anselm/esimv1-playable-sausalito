@@ -7,6 +7,14 @@ is marked (esimv1) and is also noted there.
 
 - Rain lines on by default; zoning as a volume and evacuation zones as curtains; news as a layer with marks that open; nine milder propositions and a daily-life dial; floating homes painted, docks named from county addresses; 776 boats from the lidar (devlog 20261124).
 
+## Next for boats and things that move (24 November)
+
+- [ ] Rerun the boat tool and the floating homes' heights on the September 2025 lidar (NOAA dataset 14673).
+- [ ] Remove or fade the 2018 anchored-out boats: the harbormaster counted 2 in August 2026.
+- [ ] Live ferry and bus positions from the operator's GTFS-realtime feed, through a relay on the server.
+- [ ] Vessels under way from AIS (archive to June 2026, or aisstream.io through a relay).
+- [ ] Buses in the Waldo tunnel are drawn on the hill; holiday timetables are left out; the timetable file expires 12 December 2026.
+
 ## The demo, one day (Anselm, 2026-11-23)
 
 His direction: propositions people say yes or no to, placed on the map where the issue is; "i just want to let people

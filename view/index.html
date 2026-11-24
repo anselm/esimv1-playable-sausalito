@@ -45,8 +45,8 @@
   .panel { z-index: 3; } .chip { z-index: 2; } .mark { z-index: 1; }
   .mark { position: fixed; transform: translate(-50%, -50%); min-width: 13px; height: 13px; box-sizing: border-box; padding: 0 2px; border-radius: 7px; border: 1.5px solid var(--accent); background: var(--panel); color: var(--accent); font-size: 9px; line-height: 10px; font-weight: 700; text-align: center; cursor: pointer; }
   .mark:hover { background: var(--accent); color: #fff; }
-  .mark .hl { position: absolute; left: 16px; top: -4px; max-width: 230px; padding: 1px 6px; border-radius: 3px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); font-size: 11px; line-height: 15px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; backdrop-filter: blur(6px); }
-  .mark.quiet .hl { display: none; } .mark:hover .hl { display: block; max-width: 420px; z-index: 5; }
+  .mark .hl { position: absolute; left: 16px; top: -4px; width: max-content; max-width: 190px; padding: 2px 6px; border-radius: 3px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); font-size: 11px; line-height: 14px; font-weight: 400; white-space: normal; text-align: left; backdrop-filter: blur(6px); }
+  .mark.quiet .hl { display: none; } .mark:hover .hl { display: block; z-index: 5; }
   .dock { position: fixed; transform: translate(-50%, -50%); font-size: 11px; font-weight: 600; color: var(--ink); text-shadow: 0 0 3px var(--panel), 0 0 3px var(--panel), 0 0 6px var(--panel); pointer-events: none; white-space: nowrap; }
   #layers .go { cursor: pointer; color: var(--accent); }
   @media (max-width: 720px) { #dials { bottom: auto; top: 62px; gap: 8px; } }
@@ -80,7 +80,7 @@
   Trees: whatever stands 3 m or more above the ground outside buildings in the same survey's points (US Geological Survey), one body per 7 m of canopy.
   Creeks are OpenStreetMap's, and the fainter drainage lines under "layers" are computed here from the lidar ground. Roads are OpenStreetMap's lines drawn as geometry on the ground, as wide as their lanes on the map or as their class usually is; bridges stand at the height the lidar saw. Buildings, roads and piers: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.
   Building heights: <span id="tagged"></span>. Clock time is Pacific Standard Time.
-  Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. Ground below that level shows wet whether or not the bay can reach it; walls, drains and pumps are not in the picture. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation. Boats: each patch of 2018 lidar returns standing over the water, away from buildings and piers, is drawn as one hull, as long and wide as the patch and lying the way it lies, with a mast as tall as its tallest return or a cabin where it was low. Boats that touch count as one, and which end is the bow is a guess. Floating homes are OpenStreetMap's outlines; where the lidar gave no height theirs is a placeholder. Small round marks: places named in the news the inhaler has read.</div>
+  Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. Ground below that level shows wet whether or not the bay can reach it; walls, drains and pumps are not in the picture. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation. Boats: each patch of 2018 lidar returns standing over the water, away from buildings and piers, is drawn as one hull, as long and wide as the patch and lying the way it lies, with a mast as tall as its tallest return or a cabin where it was low. Boats that touch count as one, and which end is the bow is a guess. Floating homes are OpenStreetMap's outlines; where the lidar gave no height theirs is a placeholder. Ferries and buses: Golden Gate Ferry and Golden Gate Transit, drawn where their public timetable puts them at the time on the clock, at a steady speed between stops; they are not tracked, and holiday timetables are left out. Small round marks: places named in the news the inhaler has read.</div>
 
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
 <script type="module">
@@ -90,6 +90,7 @@ import { makeWater } from './lib/water.js'
 import { tideNow, tidePredicted } from './lib/tide.js'
 import { skyNow } from './lib/sky.js'
 import { LAYERS, fetchLayer } from './lib/layers.js'
+import { makeAgents } from './lib/agents.js'
 
 const q = new URLSearchParams(location.search)
 const LAT = 37.859, LON = -122.485, TZ_MERIDIAN = -120, GAUGE = 9414290
@@ -422,6 +423,18 @@ function applyLook() { const L = LOOKS[state.look]; paintGround(L); paintRoads(L
 const AX = (W.anchor ? W.anchor[0] : (W.e0 + W.e1) / 2) - (W.e0 + W.e1) / 2, AZ = (W.n0 + W.n1) / 2 - (W.anchor ? W.anchor[1] : (W.n0 + W.n1) / 2)
 function applyCam() { const c = CAMS[state.cam], top = state.cam === 'top'; camera.position.set(top ? 0 : c.pos[0] + AX, top ? Math.max(SX, SY) * 1.25 : c.pos[1], top ? 1 : c.pos[2] + AZ); controls.target.set(top ? 0 : c.at[0] + AX, c.at[1], top ? 0 : c.at[2] + AZ); controls.update(); dirty = true; for (const b of document.querySelectorAll('#cams button')) b.classList.toggle('on', b.dataset.k === state.cam) }
 
+// ---- agents: the ferries and buses, where their public timetable puts them at the second on the clock --------
+// The clock runs on from the moment chosen, at the speed of the world. A bus stands on the ground, or on a bridge's deck where there is one.
+const deckAt = new Map(); for (const r of town.roads) if (r.z) for (let i = 0; i < r.p.length; i++) { const k = `${Math.round(r.p[i][0] / 16)},${Math.round(r.p[i][1] / 16)}`; deckAt.set(k, Math.max(deckAt.get(k) ?? -99, r.z[i])) }
+const standOn = (x, y) => Math.max(groundAt(x, y), deckAt.get(`${Math.round(x / 16)},${Math.round(y / 16)}`) ?? -99) + 0.2
+const going = { agents: null, now: [], set: performance.now(), labels: [] }
+fetch('data/transit.json').then((r) => r.ok ? r.json() : null).then((t) => { if (!t) return; going.agents = makeAgents(THREE, t, { X, Z, heightAt: standOn, SX, SY }); going.agents.group.visible = going.on !== false; scene.add(going.agents.group); going.ready?.(); setTimeout(() => { dirty = true }, 300) }).catch(() => {})
+function goingStep() { if (!going.agents || !going.agents.group.visible) return
+  let sec, dow; if (state.live) { const p = pst(new Date()); sec = p.getUTCHours() * 3600 + p.getUTCMinutes() * 60 + p.getUTCSeconds() + p.getUTCMilliseconds() / 1000; dow = (p.getUTCDay() + 6) % 7 }
+  else { if (going.day !== state.day || going.hour !== state.hour) { going.day = state.day; going.hour = state.hour; going.set = performance.now() } sec = state.hour * 3600 + (performance.now() - going.set) / 1000; dow = (pst(moment()).getUTCDay() + 6) % 7 }
+  going.now = going.agents.tick(sec, dow, Math.max(state.level, W.water_m + 0.1))
+  const ferries = going.now.filter((a) => a.k === 'ferry'); while (going.labels.length < ferries.length) { const el = document.createElement('div'); el.className = 'dock'; document.getElementById('marks').append(el); going.labels.push(el) }
+  going.labels.forEach((el, i) => { const f = ferries[i]; el.hidden = !f; if (f) { el.textContent = f.n.replace(/ Ferry$/, '') + ' ferry'; over(el, X(f.x), state.level + 22, Z(f.y)) } }) }
 // ---- news: what the inhaler has read about the town (a separate service; the page only asks it) -----------
 const INHALER = q.get('inhaler') || 'https://inhaler.exe.xyz', BEAT = 'sausalito'
 function utm10(lat, lon) {                                            // WGS84 to UTM zone 10 north, metres (Krueger series, good to a centimetre here)
@@ -455,8 +468,8 @@ async function loadNews() {
     const at = new Map(), host = document.getElementById('marks'), stems = []
     for (const f of news.facts) { const p = spot(f); if (!p) continue; const key = `${Math.round(p.x / 40)},${Math.round(p.y / 40)}`; if (!at.has(key)) at.set(key, { x: p.x, y: p.y, facts: [] }); at.get(key).facts.push(f) }
     for (const mk of at.values()) { mk.g = Math.max(groundAt(mk.x, mk.y), state.level); mk.facts.sort((a, b) => factDay(b) - factDay(a)); stems.push(X(mk.x), mk.g, Z(mk.y), X(mk.x), mk.g + 34, Z(mk.y))
-      const el = document.createElement('div'); el.className = 'mark'; el.title = mk.facts[0].place || 'in the news'; el.innerHTML = `${mk.facts.length > 1 ? mk.facts.length : ''}<span class="hl">${esc(mk.facts[0].claim)}</span>`; el.hidden = true
-      el.onclick = () => showCard(`In the news${mk.facts[0].place ? ' · ' + esc(mk.facts[0].place) : ''}`, mk.facts.slice(0, 8).map((f) => `<span class="m">${dayWords(factDay(f))}, ${esc(f.source)}:</span> ${esc(f.claim)} <a href="${esc(f.url)}" target="_blank" rel="noopener">source</a>`).concat(mk.facts.length > 8 ? [`<span class="m">and ${mk.facts.length - 8} more</span>`] : []))
+      const el = document.createElement('div'); el.className = 'mark'; el.title = mk.facts[0].place || 'in the news'; el.innerHTML = `${mk.facts.length > 1 ? mk.facts.length : ''}<span class="hl">${esc(mk.facts[0].headline || mk.facts[0].claim)}</span>`; el.hidden = true
+      el.onclick = () => showCard(`In the news${mk.facts[0].place ? ' · ' + esc(mk.facts[0].place) : ''}`, mk.facts.slice(0, 8).map((f) => `${f.headline ? `<b>${esc(f.headline)}</b><br>` : ''}<span class="m">${dayWords(factDay(f))}, ${esc(f.source)}:</span> ${esc(f.claim)} <a href="${esc(f.url)}" target="_blank" rel="noopener">source</a>`).concat(mk.facts.length > 8 ? [`<span class="m">and ${mk.facts.length - 8} more</span>`] : []))
       mk.el = el; host.append(el); news.marks.push(mk) }
     news.marks.sort((a, b) => factDay(b.facts[0]) - factDay(a.facts[0]))                                // the newest report gets the room first
     news.stems.geometry.setAttribute('position', new THREE.Float32BufferAttribute(stems, 3))
@@ -524,6 +537,7 @@ function paintWash() {
   for (const def of LAYERS) { const row = document.createElement('label'); row.innerHTML = `<input type="checkbox"><span><b>${esc(def.name)}</b> <span class="m" data-n></span><br><span class="m">${esc(def.by)}</span><span data-k></span></span>`; host.append(row)
     const box = row.querySelector('input'), note = row.querySelector('[data-n]'), key = row.querySelector('[data-k]')
     box.onchange = async () => {
+      if (def.agents) { going.on = box.checked; if (going.agents) going.agents.group.visible = box.checked; for (const el of going.labels) el.hidden = true; const say = () => { note.textContent = box.checked ? `${going.now.filter((a) => a.k === 'ferry').length} ferries and ${going.now.filter((a) => a.k === 'bus').length} buses in view now` : '' }; going.ready = say; setTimeout(say, 1200); dirty = true; return }
       if (def.news) { note.textContent = 'asking…'; await newsReady; setNews(box.checked); note.innerHTML = news.marks.length ? `${news.marks.reduce((a, m) => a + m.facts.length, 0)} reports at ${news.marks.length} places · <span class="go">read the issues</span>` : 'the inhaler did not answer'; const go = note.querySelector('.go'); if (go) go.onclick = (e) => { e.preventDefault(); toggle('news', true) }; return }
       if (box.checked) { note.textContent = 'asking…'; try { await layerOn(def); lay.on.add(def.id); const feats = lay.data.get(def.id); note.textContent = `${feats.length.toLocaleString('en')} shapes`
           const seen = new Map(); for (const f of feats) { const v = f.props[def.field]; if (!def.thin && f.type === 'area' && !seen.has(v) && seen.size < 9) seen.set(v, def.colour(v, f.props)) }
@@ -532,7 +546,7 @@ function paintWash() {
       else { lay.on.delete(def.id); key.innerHTML = '' }
       paintWash()
     }
-    if (def.on && q.get(def.news ? 'news' : 'creeks') !== '0') { box.checked = true; def.news ? setTimeout(box.onchange, 0) : box.onchange() } } }
+    if (def.on && q.get(def.news ? 'news' : def.agents ? 'moving' : 'creeks') !== '0') { box.checked = true; def.news || def.agents ? setTimeout(box.onchange, 0) : box.onchange() } } }
 // a double click brings that spot to the middle and comes a third closer
 renderer.domElement.addEventListener('dblclick', (e) => { ray.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera); const hit = ray.intersectObject(ground)[0]; if (!hit) return
   const from = controls.target.clone(), off = camera.position.clone().sub(from), t0 = performance.now(), step = () => { const u = Math.min(1, (performance.now() - t0) / 500), k = u * u * (3 - 2 * u)
@@ -555,7 +569,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     const v = f.props[def.field], more = def.say?.(v, f.props); rows.push(`<b>${esc(def.name)}</b>: ${esc(v ?? '')}${more ? ` <span class="m">(${esc(more)})</span>` : ''}`); break }
   const near = news.facts.filter((f) => { const p = spot(f); return p && Math.hypot(p.x - x, p.y - y) < 120 }).slice(0, 3)
   for (const f of near) rows.push(`<span class="m">${dayWords(factDay(f))}, ${esc(f.source)}:</span> ${esc(f.claim)} <a href="${esc(f.url)}" target="_blank" rel="noopener">source</a>`)
-  const unread = LAYERS.filter((d) => !d.news && !lay.data.has(d.id)).length
+  const unread = LAYERS.filter((d) => !d.news && !d.agents && !lay.data.has(d.id)).length
   showCard('Here', rows, unread ? `<div class="row m">${unread} layers have not been read; tick them under "layers" and click again.</div>` : '')
 })
 
@@ -674,7 +688,7 @@ const chipAt = new THREE.Vector3()
 const overAt = new THREE.Vector3(), over = (el, x, g, z) => { overAt.set(x, g, z).project(camera); const ok = overAt.z < 1 && Math.abs(overAt.x) < 1 && Math.abs(overAt.y) < 1; el.style.display = ok && !q.has('bare') ? '' : 'none'; if (ok) { el.style.left = `${(overAt.x + 1) / 2 * innerWidth}px`; el.style.top = `${(1 - overAt.y) / 2 * innerHeight}px` } }
 function placeChips() {
  const said = [...document.querySelectorAll('.chip')].filter((c) => c.style.display !== 'none').map((c) => [parseFloat(c.style.left) - 60, parseFloat(c.style.top) - 10])   // not under a proposition's chip
- if (news.on) for (const mk of news.marks) { over(mk.el, X(mk.x), mk.g + 34, Z(mk.y)); const x = parseFloat(mk.el.style.left), y = parseFloat(mk.el.style.top), room = mk.el.style.display !== 'none' && x < innerWidth - 120 && !said.some(([a, b]) => Math.abs(a - x) < 250 && Math.abs(b - y) < 20); if (room) said.push([x, y]); mk.el.classList.toggle('quiet', !room) }
+ if (news.on) for (const mk of news.marks) { over(mk.el, X(mk.x), mk.g + 34, Z(mk.y)); const x = parseFloat(mk.el.style.left), y = parseFloat(mk.el.style.top), room = mk.el.style.display !== 'none' && x < innerWidth - 120 && !said.some(([a, b]) => Math.abs(a - x) < 215 && Math.abs(b - y) < 46); if (room) said.push([x, y]); mk.el.classList.toggle('quiet', !room) }
  for (const L of lay.labels) if (!L.el.hidden) over(L.el, X(L.x), state.level + 14, Z(L.y))
  const put = []
  for (const c of document.querySelectorAll('.chip')) { const p = PROPS.find((x) => x.id === c.dataset.id); chipAt.set(X(p.at[0]), groundAt(p.at[0], p.at[1]) + 45, Z(p.at[1])).project(camera)
@@ -743,7 +757,7 @@ function tourStep(now, dt) {
   controls.update(); return true
 }
 const still = q.has('still'), t0 = performance.now(); let lastT = t0
-renderer.setAnimationLoop(() => { const now = performance.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now; if (!(!still && tourStep(now, dt))) controls.update(); if (!still) water.tick((now - t0) / 1000); placeChips(); if (dirty || !still) { dirty = false; renderer.render(scene, camera); document.title = 'The Sausalito Model (drawn)' } })
+renderer.setAnimationLoop(() => { const now = performance.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now; if (!(!still && tourStep(now, dt))) controls.update(); if (!still) water.tick((now - t0) / 1000); goingStep(); placeChips(); if (dirty || !still) { dirty = false; renderer.render(scene, camera); document.title = 'The Sausalito Model (drawn)' } })
 </script>
 </body>
 </html>

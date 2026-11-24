@@ -50,3 +50,4 @@ still one HTML file with its own CSS, not Svelte and Tailwind; that move waits u
 
 
 - 24 November 2026 (`devlog/20261124-volumes-news-propositions-boats.md`): a layer in `view/lib/layers.js` may set `form` (`volume`, `curtain`, `labels`), `height_m` and `flat`; news is the layer `news` (no menu button); the panel is called propositions, never a game (Anselm), and its propositions are moderate ones with a `life` dial; `view/tools/boats.py` writes `view/data/boats.bin` from `cache/dsm1.bin` (rerun after `prepare.py`).
+- Agents (2026-11-24): `view/lib/agents.js` moves ferries and buses by `view/data/transit.json`, which `view/tools/transit.py` cuts from Golden Gate Transit's schedule feed (valid to 2026-12-12; rerun then). Scheduled, not tracked. News marks show the inhaler's `headline` per fact.

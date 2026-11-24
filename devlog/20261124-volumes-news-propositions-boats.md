@@ -81,3 +81,38 @@ synthetic wheel events; dragging and touch were not checked by hand.
 Anselm: "for news - i am less interested in the named places and more interested in the actual news itself
 about that place". Each mark now carries the newest report's own words beside it where there is room (the
 newest reports get the room first), the full sentence on hover, and all reports on a click.
+
+## Afternoon: headlines, the timetable as agents, and where newer boat data is
+
+Anselm: "it is ok to have longer headlines, definitely don't cut mid sentence ... the inhaler should
+summarize for us"; "definitely we should try and use the real ferry data - we can add a live agent system
+to show moving agents"; and on boats, "can we get more recent ais and or marine boat data? ... my concern
+had mostly been around the house-boats - are there any other sources".
+
+**Headlines.** The inhaler now writes a headline of four to nine words for every fact (its devlog has the
+detail). The mark shows that headline whole, wrapped over two or three lines, and falls back to the full
+claim where a fact has none yet.
+
+**Agents.** `view/lib/agents.js` moves vehicles by a timetable; `view/tools/transit.py` cuts Golden Gate
+Transit's public schedule feed to the window: 508 trips on 26 paths, 21 of them the Sausalito ferry, the
+rest buses 101, 114, 120, 132, 154, 172. They are a layer, "Ferry and buses", on by default. The clock runs
+on from the chosen moment at the world's speed. This is the schedule, not tracking: speed is steady between
+stops, holiday timetables are left out, a bus in the Waldo tunnel is drawn on the hill above it, and the
+feed in hand is valid to 12 December 2026 (rerun the tool for the next one). The operator also publishes
+live vehicle positions (GTFS-realtime, `realtime.goldengate.org/gtfsrealtime/VehiclePositions`, answered
+anonymously today); using them needs a protobuf reader and probably a relay on the site's server.
+
+**Newer data, found by a research agent (Opus) and not yet used.** Items it opened itself:
+- A lidar flight of 27 September 2025 covers the Sausalito waterfront (NOAA coastal lidar dataset 14673,
+  CC0, 23 tiles). The same boat and height tools could run on it, which would bring the boats and the
+  floating homes' heights from 2018 to 2025.
+- The federal AIS archive (MarineCadastre, CC0) has daily files to 30 June 2026 with small-boat (class B)
+  rows inside Richardson Bay. Live AIS from aisstream.io is free with a key but may not be called from a
+  browser, so it needs a relay.
+- The Richardson's Bay Regional Agency harbormaster's report of 10 September 2026 counts anchored-out
+  boats: 87 in October 2021, 21 in November 2025, 2 by August 2026. The 2018 boats drawn out in the bay are
+  therefore almost all gone.
+- BCDC's 1985 staff report gives houseboat berths per marina: Waldo Point 265, Kappas 117, Yellow Ferry 22,
+  Commodore 11.
+Checked here: Marin County's building footprints have 128 outlines over the water in the floating-home
+area, traced from 2004 to 2014 photographs, with no heights; OpenStreetMap's 444 are the better set.
