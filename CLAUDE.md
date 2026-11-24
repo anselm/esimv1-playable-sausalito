@@ -48,3 +48,5 @@ be reworked on 2026-11-23 (`devlog/20261123-house-style.md`): one floating menu 
 time, corners of 4 px or less, checked by screenshot in light and dark (`DARK=1 node view/tools/shot.mjs ...`). The page is
 still one HTML file with its own CSS, not Svelte and Tailwind; that move waits until the demo's shape settles.
 
+
+- 24 November 2026 (`devlog/20261124-volumes-news-propositions-boats.md`): a layer in `view/lib/layers.js` may set `form` (`volume`, `curtain`, `labels`), `height_m` and `flat`; news is the layer `news` (no menu button); the panel is called propositions, never a game (Anselm), and its propositions are moderate ones with a `life` dial; `view/tools/boats.py` writes `view/data/boats.bin` from `cache/dsm1.bin` (rerun after `prepare.py`).

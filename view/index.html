@@ -38,26 +38,32 @@
   #play .prop { padding: 7px 0; border-top: 1px solid var(--line); } #play .prop b { font-size: 13px; } #play .m { opacity: .7; }
   #play .yn button { margin: 4px 4px 0 0; } #play .why { margin: 3px 0 0; } #play .why i { font-style: normal; opacity: .7; }
   #dials { bottom: 12px; top: auto; left: 50%; transform: translateX(-50%); display: flex; gap: 14px; padding: 7px 12px; font-size: 11px; }
-  #dials .d { text-align: center; min-width: 54px; } #dials .bar { height: 6px; width: 54px; border-radius: 3px; background: var(--line); position: relative; margin-top: 3px; }
+  #dials .d { text-align: center; min-width: 54px; white-space: nowrap; } #dials .bar { height: 6px; width: 54px; border-radius: 3px; background: var(--line); position: relative; margin-top: 3px; }
   #dials .bar span { position: absolute; top: 0; bottom: 0; border-radius: 3px; } #dials .mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--ink); opacity: .5; }
   .chip { position: fixed; transform: translate(-50%, -100%); background: var(--panel); border: 1px solid var(--accent); color: var(--accent); border-radius: 3px; padding: 2px 8px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; backdrop-filter: blur(6px); }
   .chip.yes { background: var(--accent); color: #fff; }
-  @media (max-width: 720px) { #dials { bottom: 48px; gap: 8px; } }
+  .panel { z-index: 3; } .chip { z-index: 2; } .mark { z-index: 1; }
+  .mark { position: fixed; transform: translate(-50%, -50%); min-width: 13px; height: 13px; box-sizing: border-box; padding: 0 2px; border-radius: 7px; border: 1.5px solid var(--accent); background: var(--panel); color: var(--accent); font-size: 9px; line-height: 10px; font-weight: 700; text-align: center; cursor: pointer; }
+  .mark:hover { background: var(--accent); color: #fff; }
+  .dock { position: fixed; transform: translate(-50%, -50%); font-size: 11px; font-weight: 600; color: var(--ink); text-shadow: 0 0 3px var(--panel), 0 0 3px var(--panel), 0 0 6px var(--panel); pointer-events: none; white-space: nowrap; }
+  #layers .go { cursor: pointer; color: var(--accent); }
+  @media (max-width: 720px) { #dials { bottom: auto; top: 62px; gap: 8px; } }
+  #card a { color: var(--accent); }
   #wait { top: 50%; left: 50%; transform: translate(-50%,-50%); }
   @media (max-width: 720px) { #ctl, #credit, #layers, #play, #news { top: auto; bottom: 48px; max-height: 46vh; } #title small { display: none; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="title" class="panel">The Sausalito Model<small>the town as measured, and a few things to try.</small></div>
+<div id="title" class="panel">The Sausalito Model<small>the town as measured, and propositions to try.</small></div>
 <div id="readout" class="panel" hidden></div>
-<div id="bar" class="panel" hidden><button id="burger" aria-label="menu" aria-expanded="true">☰</button><div id="menu"><button data-p="ctl">view</button><button data-p="play">play</button><button data-p="layers">layers</button><button data-p="news" id="newsBtn" hidden>news</button><button data-p="credit">about</button></div></div>
-<div id="news" class="panel" hidden><h4>What the town is talking about</h4><div class="m">Read from local news, notices and public posts by the <a href="https://inhaler.exe.xyz/" target="_blank" rel="noopener">inhaler</a>. Each line is what a source said; nothing is checked for truth.</div><div class="tabs"><button id="tabIssues" class="on">issues</button> <button id="tabDate">around this date</button></div><div id="newsList"></div></div>
+<div id="bar" class="panel" hidden><button id="burger" aria-label="menu" aria-expanded="true">☰</button><div id="menu"><button data-p="ctl">view</button><button data-p="play">propositions</button><button data-p="layers">layers</button><button data-p="credit">about</button></div></div>
+<div id="news" class="panel" hidden><span class="go" id="newsBack">‹ layers</span><h4>What the town is talking about</h4><div class="m">Read from local news, notices and public posts by the <a href="https://inhaler.exe.xyz/" target="_blank" rel="noopener">inhaler</a>. Each line is what a source said; nothing is checked for truth.</div><div class="tabs"><button id="tabIssues" class="on">issues</button> <button id="tabDate">around this date</button></div><div id="newsList"></div></div>
 <div id="layers" class="panel" hidden><div class="m" style="margin-bottom:6px">Public maps of the town, read from their publishers when ticked. Click the ground or a building for what is known there.</div><div id="layerList"></div></div>
 <div id="card" class="panel" hidden></div>
 <div id="play" class="panel" hidden></div>
 <div id="dials" class="panel" hidden></div>
-<div id="chips"></div>
+<div id="chips"></div><div id="marks"></div>
 <div id="wait" class="panel">building the town…</div>
 <div id="ctl" class="panel" hidden>
   <div class="row"><label>look</label><span id="looks"></span></div>
@@ -71,7 +77,7 @@
   Trees: whatever stands 3 m or more above the ground outside buildings in the same survey's points (US Geological Survey), one body per 7 m of canopy.
   Creeks are OpenStreetMap's, and the fainter drainage lines under "layers" are computed here from the lidar ground. Roads are OpenStreetMap's lines drawn as geometry on the ground, as wide as their lanes on the map or as their class usually is; bridges stand at the height the lidar saw. Buildings, roads and piers: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.
   Building heights: <span id="tagged"></span>. Clock time is Pacific Standard Time.
-  Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. Ground below that level shows wet whether or not the bay can reach it; walls, drains and pumps are not in the picture. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation. Red pins: places named in the news the inhaler has read.</div>
+  Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. Ground below that level shows wet whether or not the bay can reach it; walls, drains and pumps are not in the picture. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation. Boats: each patch of 2018 lidar returns standing over the water, away from buildings and piers, is drawn as one hull, as long and wide as the patch and lying the way it lies, with a mast as tall as its tallest return or a cabin where it was low. Boats that touch count as one, and which end is the bow is a guess. Floating homes are OpenStreetMap's outlines; where the lidar gave no height theirs is a placeholder. Small round marks: places named in the news the inhaler has read.</div>
 
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
 <script type="module">
@@ -94,7 +100,7 @@ const LOOKS = {
              const flat = [203,196,180], hill = [124,138,92], steep = [150,140,104]
              const h = hill.map((v, i) => v + (steep[i] - v) * u); return flat.map((v, i) => v + (h[i] - v) * t) },
            water: [58,104,132], road: '#66686b', roadMinor: '#85857f', kerb: '#b4b1a8', marks: { edge: '#dcdcd6', lane: '#dcdcd6', centre: '#d2b24c' }, roadEdge: null, path: '#c4bca8', pier: '#9b8a72',
-           wall: (r) => [0.90 + r * 0.06, 0.88 + r * 0.05, 0.82 + r * 0.04],
+           wall: (r, k) => k === 'houseboat' ? [[0.80,0.42,0.30],[0.36,0.50,0.58],[0.86,0.76,0.50],[0.52,0.62,0.50],[0.90,0.88,0.82],[0.56,0.40,0.30],[0.70,0.52,0.60],[0.30,0.38,0.44]][Math.floor(r * 97) % 8] : [0.90 + r * 0.06, 0.88 + r * 0.05, 0.82 + r * 0.04],
            roof: (r, k) => k === 'houseboat' ? [[0.55,0.42,0.33],[0.45,0.52,0.55],[0.62,0.58,0.50],[0.40,0.47,0.40]][Math.floor(r * 4) % 4]
                          : [[0.47,0.45,0.43],[0.58,0.40,0.32],[0.52,0.50,0.47],[0.38,0.37,0.36],[0.66,0.63,0.58]][Math.floor(r * 5) % 5],
            tree: (r) => [0.09 + r * 0.07, 0.20 + r * 0.10, 0.08 + r * 0.05], sky: [0.63,0.77,0.90], contours: false, exposure: 1.0, shadow: 0.5 },
@@ -209,6 +215,7 @@ const bGeo = new THREE.BufferGeometry(), bParts = []                 // per buil
     if (b.k === 'houseboat') { lo = Math.min(lo, W.water_m); hi = Math.max(hi, W.water_m + 0.4) }
     let mean = 0; for (const v of p) mean += groundAt(v[0], v[1]); mean /= p.length
     // a measured height stands above the ground under the building; an estimate is drawn from the high side as before
+    if (b.k === 'houseboat' && b.t === 0) b.h = Math.round((3.4 + hash(bi) * 3.0) * 10) / 10              // no measured height: one or two low storeys, a placeholder that varies
     const base = lo - 0.5, top = (b.k === 'houseboat' ? lo : b.t === 3 ? mean : Math.min(hi, lo + 9)) + b.h, first = pos.length / 3
     for (let i = 0; i < p.length; i++) { const a = p[i], c = p[(i + 1) % p.length]
       pos.push(X(a[0]), base, Z(a[1]), X(c[0]), base, Z(c[1]), X(c[0]), top, Z(c[1]), X(a[0]), base, Z(a[1]), X(c[0]), top, Z(c[1]), X(a[0]), top, Z(a[1])) }
@@ -239,7 +246,7 @@ const piers = new THREE.Mesh(new THREE.BufferGeometry(), pierMat); piers.castSha
 { const pos = []
   for (const p of town.piers) {
     if (p.area) { for (const t of THREE.ShapeUtils.triangulateShape(p.p.map(v => new THREE.Vector2(v[0], v[1])), [])) for (const k of t) pos.push(X(p.p[k][0]), 0, Z(p.p[k][1])) }
-    else for (let i = 0; i + 1 < p.p.length; i++) { const a = p.p[i], b = p.p[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, ox = -dy / l * 1.3, oy = dx / l * 1.3
+    else for (let i = 0; i + 1 < p.p.length; i++) { const a = p.p[i], b = p.p[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, ox = -dy / l * 1.6, oy = dx / l * 1.6
       const c = [[a[0] + ox, a[1] + oy], [a[0] - ox, a[1] - oy], [b[0] - ox, b[1] - oy], [b[0] + ox, b[1] + oy]]
       for (const k of [0, 1, 2, 0, 2, 3]) pos.push(X(c[k][0]), 0, Z(c[k][1])) }
   }
@@ -305,9 +312,9 @@ function readout() { const el = document.getElementById('readout'); if (el) el.t
 function applyWater() {
   readout(); if (typeof play !== 'undefined' && play.mask) { floodNow(); if (!document.getElementById('play').hidden || play.yes.size) drawPlay() }
   const level = Math.max(state.level, W.water_m + 0.1), lift = level - W.water_m           // never below the water the lidar saw
-  water.set({ level_m: level, wind_ms: state.wind.speed_ms, wind_from_deg: state.wind.from_deg }); piers.position.y = level + 0.5
+  water.set({ level_m: level, wind_ms: state.wind.speed_ms, wind_from_deg: state.wind.from_deg }); piers.position.y = level + 0.5; if (typeof moored !== 'undefined' && moored) moored.position.y = level
   const pos = bGeo.attributes.position.array
-  for (const [first, walls, roof, , k] of bParts) if (k === 'houseboat') for (let i = first; i < first + walls + roof; i++) pos[i * 3 + 1] = bRest[i * 3 + 1] + lift
+  for (const [first, walls, roof, , k, , b] of bParts) if (k === 'houseboat' && !b.gone) for (let i = first; i < first + walls + roof; i++) pos[i * 3 + 1] = bRest[i * 3 + 1] + lift
   bGeo.attributes.position.needsUpdate = true; renderer.shadowMap.needsUpdate = true; dirty = true
 }
 
@@ -323,6 +330,23 @@ let trees = null, treeRand = null
       e.set(0, r * 6.283, 0); q4.setFromEuler(e)
       m.compose(new THREE.Vector3(X(x), g + h * 0.5, Z(y)), q4, new THREE.Vector3(rad, h * 0.5, rad)); trees.setMatrixAt(i, m) }
     trees.castShadow = true; trees.receiveShadow = true; trees.frustumCulled = false; scene.add(trees) } }
+// ---- moored boats, as the 2018 lidar saw them (view/tools/boats.py): a hull as long and wide as each patch of
+// returns over the water, lying the way the patch lies, with a mast as tall as its tallest return or a cabin if it was low
+let moored = null
+{ const buf = await fetch('data/boats.bin').then(r => r.ok ? r.arrayBuffer() : null).catch(() => null)
+  if (buf) { const t = new Uint16Array(buf), n = t.length / 6
+    const hullShape = new THREE.Shape(); hullShape.moveTo(-0.5, -0.5); hullShape.lineTo(0.2, -0.5); hullShape.lineTo(0.5, 0); hullShape.lineTo(0.2, 0.5); hullShape.lineTo(-0.5, 0.5); hullShape.closePath()
+    const hullGeo = new THREE.ExtrudeGeometry(hullShape, { depth: 1, bevelEnabled: false }); hullGeo.rotateX(-Math.PI / 2)
+    const hulls = new THREE.InstancedMesh(hullGeo, new THREE.MeshStandardMaterial({ roughness: 0.6 }), n)
+    const tops = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 5).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ color: 0xcfcabd, roughness: 0.7 }), n)
+    const m = new THREE.Matrix4(), q4 = new THREE.Quaternion(), e = new THREE.Euler(), c = new THREE.Color(), HULLS = [0xf4f3ee, 0xf4f3ee, 0xe9e6dc, 0x33506b, 0x7a2f2a, 0xf4f3ee, 0x2f3a40]
+    for (let i = 0; i < n; i++) { const x = t[i * 6] / 10, y = t[i * 6 + 1] / 10, len = t[i * 6 + 2] / 10, wid = Math.min(len * 0.42, Math.max(2, t[i * 6 + 3] / 10)), h = t[i * 6 + 4] / 10, r = hash(i + 211)
+      e.set(0, t[i * 6 + 5] / 10 * Math.PI / 180 + (r < 0.5 ? Math.PI : 0), 0); q4.setFromEuler(e)                                           // the lidar gives the line a boat lies on, not which end is the bow
+      m.compose(new THREE.Vector3(X(x), -0.3, Z(y)), q4, new THREE.Vector3(len, 1.2, wid)); hulls.setMatrixAt(i, m); hulls.setColorAt(i, c.setHex(HULLS[Math.floor(r * 97) % HULLS.length]))
+      if (h > 6) m.compose(new THREE.Vector3(X(x), 0.8, Z(y)), q4, new THREE.Vector3(0.22, h, 0.22))                                          // a mast
+      else m.compose(new THREE.Vector3(X(x), 0.8, Z(y)), q4, new THREE.Vector3(len * 0.34, Math.max(0.6, h - 1), wid * 0.6))                   // a cabin
+      tops.setMatrixAt(i, m) }
+    hulls.castShadow = true; hulls.frustumCulled = tops.frustumCulled = false; moored = new THREE.Group(); moored.add(hulls, tops); moored.userData.n = n; scene.add(moored) } }
 function paintTrees(L) { if (!trees) return; const c = new THREE.Color(); for (let i = 0; i < treeRand.length; i++) { const v = L.tree(treeRand[i]); c.setRGB(v[0], v[1], v[2]); trees.setColorAt(i, c) } trees.instanceColor.needsUpdate = true }
 
 // ---- the sun: where it stands for a day of the year and a clock hour (low-precision formulas) -------
@@ -401,7 +425,7 @@ function utm10(lat, lon) {                                            // WGS84 t
   let E = eta, N = xi; for (let j = 1; j <= 3; j++) { E += al[j - 1] * Math.cos(2 * j * xi) * Math.sinh(2 * j * eta); N += al[j - 1] * Math.sin(2 * j * xi) * Math.cosh(2 * j * eta) }
   return [500000 + k0 * A * E, k0 * A * N]
 }
-const news = { issues: [], facts: [], tab: 'issues', pins: new THREE.Group() }; scene.add(news.pins)
+const news = { issues: [], facts: [], tab: 'issues', marks: [], on: false, stems: new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x0f6f8f, transparent: true, opacity: 0.7 })) }; news.stems.visible = false; scene.add(news.stems)
 const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 const factDay = (f) => f.at || f.published || 0, dayWords = (t) => t ? new Date(t * 1000).toISOString().slice(0, 10) : 'no date'
 function spot(f) { if (f.lat == null) return null; const [e, n] = utm10(f.lat, f.lon), x = e - W.e0, y = n - W.n0; return x > 0 && y > 0 && x < SX && y < SY ? { x, y } : null }
@@ -422,21 +446,30 @@ async function loadNews() {
     // and a picture of a town's ground is not the place to repeat an allegation. Anselm may change this.
     const QUIET = /\b(arrest|burglar|alleged|charged with|indict)/i, quiet = (f) => QUIET.test(f.claim || '')
     news.issues = issues.filter((x) => !QUIET.test(`${x.title} ${x.summary}`)).map((x) => ({ ...x, facts: x.facts.filter((f) => !quiet(f)) })); news.facts = facts.filter((f) => !quiet(f))
-    const seen = new Set(), mat = new THREE.MeshBasicMaterial({ color: 0xe0563a })
-    for (const f of facts) { const p = spot(f); if (!p) continue; const key = `${Math.round(p.x)},${Math.round(p.y)}`; if (seen.has(key)) continue; seen.add(key)
-      const g = groundAt(p.x, p.y), pole = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 46, 6), mat), head = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 8), mat)
-      pole.position.set(X(p.x), g + 23, Z(p.y)); head.position.set(X(p.x), g + 48, Z(p.y)); news.pins.add(pole, head) }
-    document.getElementById('newsBtn').hidden = false; news.pins.visible = !document.getElementById('news').hidden
+    const at = new Map(), host = document.getElementById('marks'), stems = []
+    for (const f of news.facts) { const p = spot(f); if (!p) continue; const key = `${Math.round(p.x / 40)},${Math.round(p.y / 40)}`; if (!at.has(key)) at.set(key, { x: p.x, y: p.y, facts: [] }); at.get(key).facts.push(f) }
+    for (const mk of at.values()) { mk.g = Math.max(groundAt(mk.x, mk.y), state.level); mk.facts.sort((a, b) => factDay(b) - factDay(a)); stems.push(X(mk.x), mk.g, Z(mk.y), X(mk.x), mk.g + 34, Z(mk.y))
+      const el = document.createElement('div'); el.className = 'mark'; el.title = mk.facts[0].place || 'in the news'; el.textContent = mk.facts.length > 1 ? mk.facts.length : ''; el.hidden = true
+      el.onclick = () => showCard(esc(mk.facts[0].place || 'In the news here'), mk.facts.slice(0, 8).map((f) => `<span class="m">${dayWords(factDay(f))}, ${esc(f.source)}:</span> ${esc(f.claim)} <a href="${esc(f.url)}" target="_blank" rel="noopener">source</a>`).concat(mk.facts.length > 8 ? [`<span class="m">and ${mk.facts.length - 8} more</span>`] : []))
+      mk.el = el; host.append(el); news.marks.push(mk) }
+    news.stems.geometry.setAttribute('position', new THREE.Float32BufferAttribute(stems, 3))
     drawNews(); dirty = true
   } catch (e) { /* the page stands without the news */ }
 }
+document.getElementById('newsBack').onclick = () => toggle('layers', true)
+function showCard(title, rows, foot = '') { const card = document.getElementById('card'); card.innerHTML = `<span class="x">close</span><h4>${title}</h4>${rows.map((r) => `<div class="row">${r}</div>`).join('')}${foot}`; card.hidden = false; card.querySelector('.x').onclick = () => { card.hidden = true } }
+function setNews(on) { news.on = on; news.stems.visible = on; for (const mk of news.marks) mk.el.hidden = !on; dirty = true }
 document.getElementById('tabIssues').onclick = () => { news.tab = 'issues'; drawNews() }; document.getElementById('tabDate').onclick = () => { news.tab = 'date'; drawNews() }
 
+const newsReady = q.get('news') !== '0' ? loadNews() : Promise.resolve()
 // ---- layers: public maps drawn on the ground. Fills are a soft wash painted over the ground; edges and
 // lines are geometry, like the roads. A click on the ground or a building opens a card of what is known there.
 const lay = { on: new Set(), data: new Map(), mesh: new Map(), wash: document.createElement('canvas') }
 lay.wash.width = lay.wash.height = 2048
 const washTex = new THREE.CanvasTexture(lay.wash); washTex.colorSpace = THREE.SRGBColorSpace
+lay.cap = document.createElement('canvas'); lay.cap.width = lay.cap.height = 2048; lay.labels = []
+const capTex = new THREE.CanvasTexture(lay.cap); capTex.colorSpace = THREE.SRGBColorSpace
+const capMesh = new THREE.Mesh(gGeo, new THREE.MeshBasicMaterial({ map: capTex, transparent: true, opacity: 0.42, depthWrite: false, side: THREE.DoubleSide })); capMesh.visible = false; capMesh.renderOrder = 9; scene.add(capMesh)   // the lid of a volume: the ground's own shape, lifted
 const washMesh = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({ map: washTex, transparent: true, depthWrite: false, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }))
 washMesh.receiveShadow = true; washMesh.visible = false; scene.add(washMesh)
 const local = ([lon, lat]) => { const [e, n] = utm10(lat, lon); return [e - W.e0, n - W.n0] }
@@ -446,28 +479,45 @@ async function layerOn(def) {
     const feats = def.local ? def.local(town) : (await fetchLayer(def, box)).map((f) => f.type === 'area' ? { ...f, rings: f.rings.map((r) => r.map(local)) } : f.type === 'line' ? { ...f, line: f.line.map(local) } : { ...f, point: local(f.point) })
     for (const f of feats) if (f.type === 'area') { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const [x, y] of f.rings[0]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y } f.box = [x0, y0, x1, y1] }
     lay.data.set(def.id, feats)
-    const pos = [], faint = [], inside = (p) => p[0] > -200 && p[1] > -200 && p[0] < SX + 200 && p[1] < SY + 200, clip = (pts) => pts.map(([x, y]) => [Math.min(SX - 1, Math.max(1, x)), Math.min(SY - 1, Math.max(1, y))])
+    const pos = [], faint = [], wall = [], wcol = [], inside = (p) => p[0] > -200 && p[1] > -200 && p[0] < SX + 200 && p[1] < SY + 200, clip = (pts) => pts.map(([x, y]) => [Math.min(SX - 1, Math.max(1, x)), Math.min(SY - 1, Math.max(1, y))])
+    const H = def.height_m || 0, tmp = new THREE.Color(), a0 = def.form === 'curtain' ? 0.38 : 0.5, a1 = def.form === 'curtain' ? 0.0 : 0.3
+    // a wall from the ground up along an outline, in steps short enough to follow the slope; a curtain fades out upward, a volume's side does not
+    const curtain = (r, col) => { tmp.set(col).convertSRGBToLinear(); for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 14))
+        if ((a[0] <= 1 && b[0] <= 1) || (a[1] <= 1 && b[1] <= 1) || (a[0] >= SX - 1 && b[0] >= SX - 1) || (a[1] >= SY - 1 && b[1] >= SY - 1)) continue          // not along the window's own edge
+        for (let k = 0; k < n; k++) { const x0 = a[0] + (b[0] - a[0]) * k / n, y0 = a[1] + (b[1] - a[1]) * k / n, x1 = a[0] + (b[0] - a[0]) * (k + 1) / n, y1 = a[1] + (b[1] - a[1]) * (k + 1) / n, g0 = Math.max(groundAt(x0, y0), W.water_m), g1 = Math.max(groundAt(x1, y1), W.water_m)
+          wall.push(X(x0), g0, Z(y0), X(x1), g1, Z(y1), X(x1), g1 + H, Z(y1), X(x0), g0, Z(y0), X(x1), g1 + H, Z(y1), X(x0), g0 + H, Z(y0))
+          for (const al of [a0, a0, a1, a0, a1, a1]) wcol.push(tmp.r, tmp.g, tmp.b, al) } } }
     for (const f of feats) {
-      if (f.type === 'area') for (const r of f.rings) { if (r.some(inside)) ribbon(pos, clip(r), def.thin ? 0.9 : 2.2, 0.5) }
+      if (f.type === 'area') for (const r of f.rings) { if (!r.some(inside)) continue; const col = def.colour(f.props[def.field], f.props)
+        if (H && col && !def.flat?.(f.props[def.field])) curtain(clip(r), col); else ribbon(pos, clip(r), def.thin ? 0.9 : 2.2, 0.5) }
       else if (f.type === 'line') { if (f.line.some(inside)) ribbon(f.props.culvert ? faint : pos, clip(f.line), def.width ? def.width(f.props) : 4, 0.6) }
+      else if (def.form === 'labels') continue
       else if (inside(f.point)) { const [x, y] = f.point, g = groundAt(x, y); for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283, b = (k + 1) / 8 * 6.283; pos.push(X(x), g + 60, Z(y), X(x + Math.cos(a) * 9), g + 60, Z(y + Math.sin(a) * 9), X(x + Math.cos(b) * 9), g + 60, Z(y + Math.sin(b) * 9), X(x), g, Z(y), X(x + Math.cos(a) * 1.2), g + 60, Z(y + Math.sin(a) * 1.2), X(x + Math.cos(b) * 1.2), g + 60, Z(y + Math.sin(b) * 1.2)) } }
     }
+    if (def.form === 'labels') { const groups = new Map(); for (const f of feats) { const k = String(f.props[def.field] || '').trim(); if (!k || !inside(f.point)) continue; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(f.point) }
+      for (const [k, pts] of groups) { const el = document.createElement('div'); el.className = 'dock'; el.hidden = true; el.textContent = `${k.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase())} · ${pts.length}`; document.getElementById('marks').append(el)
+        lay.labels.push({ id: def.id, el, x: pts.reduce((a, p) => a + p[0], 0) / pts.length, y: pts.reduce((a, p) => a + p[1], 0) / pts.length }) } }
     const m = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: def.thin ? 0x2b2b2b : new THREE.Color(def.colour('') || '#333').multiplyScalar(def.local ? 1 : 0.55), side: THREE.DoubleSide, transparent: !!def.thin, opacity: def.thin ? 0.55 : 1, polygonOffset: true, polygonOffsetFactor: -14, polygonOffsetUnits: -14 }))
     m.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); m.renderOrder = 8; scene.add(m); lay.mesh.set(def.id, m)
+    if (wall.length) { const w = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, side: THREE.DoubleSide, depthWrite: false }))
+      w.geometry.setAttribute('position', new THREE.Float32BufferAttribute(wall, 3)); w.geometry.setAttribute('color', new THREE.Float32BufferAttribute(wcol, 4)); w.renderOrder = 10; m.add(w) }
     if (faint.length) { const f = new THREE.Mesh(new THREE.BufferGeometry(), m.material.clone()); f.material.transparent = true; f.material.opacity = 0.4; f.geometry.setAttribute('position', new THREE.Float32BufferAttribute(faint, 3)); f.renderOrder = 8; m.add(f) }     // water the map says is in a pipe
   }
 }
 function paintWash() {
-  const c = lay.wash.getContext('2d'), k = lay.wash.width / SX; c.clearRect(0, 0, lay.wash.width, lay.wash.height); let any = false
-  for (const def of LAYERS) { if (!lay.on.has(def.id) || def.thin) continue
-    for (const f of lay.data.get(def.id) || []) { if (f.type !== 'area') continue; const col = def.colour(f.props[def.field], f.props); if (!col) continue; any = true
-      c.fillStyle = col; c.globalAlpha = 0.5; c.beginPath(); for (const r of f.rings) { r.forEach(([x, y], i) => (i ? c.lineTo(x * k, (SY - y) * k) : c.moveTo(x * k, (SY - y) * k))); c.closePath() } c.fill('evenodd') } }
-  c.globalAlpha = 1; washTex.needsUpdate = true; washMesh.visible = any; for (const [id, m] of lay.mesh) m.visible = lay.on.has(id); dirty = true
+  const k = lay.wash.width / SX, any = { wash: false, cap: false }; let capH = 0
+  for (const [name, cv] of [['wash', lay.wash], ['cap', lay.cap]]) { const c = cv.getContext('2d'); c.clearRect(0, 0, cv.width, cv.height)
+    for (const def of LAYERS) { if (!lay.on.has(def.id) || def.thin || def.form === 'curtain') continue
+      for (const f of lay.data.get(def.id) || []) { if (f.type !== 'area' || (def.form === 'volume' && !def.flat?.(f.props[def.field])) !== (name === 'cap')) continue; const col = def.colour(f.props[def.field], f.props); if (!col) continue; any[name] = true; if (name === 'cap') capH = def.height_m
+        c.fillStyle = col; c.globalAlpha = name === 'cap' ? 1 : 0.5; c.beginPath(); for (const r of f.rings) { r.forEach(([x, y], i) => (i ? c.lineTo(x * k, (SY - y) * k) : c.moveTo(x * k, (SY - y) * k))); c.closePath() } c.fill('evenodd') } }
+    c.globalAlpha = 1 }
+  washTex.needsUpdate = true; capTex.needsUpdate = true; washMesh.visible = any.wash; capMesh.visible = any.cap; capMesh.position.y = capH; for (const [id, m] of lay.mesh) m.visible = lay.on.has(id); for (const L of lay.labels) L.el.hidden = !lay.on.has(L.id); dirty = true
 }
 { const host = document.getElementById('layerList')
   for (const def of LAYERS) { const row = document.createElement('label'); row.innerHTML = `<input type="checkbox"><span><b>${esc(def.name)}</b> <span class="m" data-n></span><br><span class="m">${esc(def.by)}</span><span data-k></span></span>`; host.append(row)
     const box = row.querySelector('input'), note = row.querySelector('[data-n]'), key = row.querySelector('[data-k]')
     box.onchange = async () => {
+      if (def.news) { note.textContent = 'asking…'; await newsReady; setNews(box.checked); note.innerHTML = news.marks.length ? `${news.marks.length} places · <span class="go">read the issues</span>` : 'the inhaler did not answer'; const go = note.querySelector('.go'); if (go) go.onclick = (e) => { e.preventDefault(); toggle('news', true) }; return }
       if (box.checked) { note.textContent = 'asking…'; try { await layerOn(def); lay.on.add(def.id); const feats = lay.data.get(def.id); note.textContent = `${feats.length.toLocaleString('en')} shapes`
           const seen = new Map(); for (const f of feats) { const v = f.props[def.field]; if (!def.thin && f.type === 'area' && !seen.has(v) && seen.size < 9) seen.set(v, def.colour(v, f.props)) }
           key.innerHTML = seen.size > 1 || def.say ? '<br>' + [...seen].filter(([, col]) => col && !col.endsWith('00')).map(([v, col]) => `<span class="sw" style="background:${col}"></span>${esc(def.say?.(v, {}) || v)}`).join('') : '' }
@@ -475,7 +525,7 @@ function paintWash() {
       else { lay.on.delete(def.id); key.innerHTML = '' }
       paintWash()
     }
-    if (def.on && q.get('creeks') !== '0') { box.checked = true; box.onchange() } } }
+    if (def.on && q.get(def.news ? 'news' : 'creeks') !== '0') { box.checked = true; def.news ? setTimeout(box.onchange, 0) : box.onchange() } } }
 // what is known at a point: the building if one was hit, the ground's height, and every layer that has been read
 const within = (rings, x, y) => { let c = false; for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) if ((r[i][1] > y) !== (r[j][1] > y) && x < (r[j][0] - r[i][0]) * (y - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) c = !c; return c }
 const ray = new THREE.Raycaster(); let downAt = null
@@ -486,22 +536,23 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   const hb = ray.intersectObject(buildings)[0], hg = ray.intersectObject(ground)[0], hit = hb && (!hg || hb.distance < hg.distance + 2) ? hb : hg; if (!hit) return
   const x = hit.point.x + SX / 2, y = SY / 2 - hit.point.z, rows = []
   if (hit === hb) { const v = hb.face.a, bi = bParts.findIndex(([first, walls, roof]) => v >= first && v < first + walls + roof), b = town.buildings.filter((q0) => q0.p.length >= 3)[bi]
-    if (b) rows.push(`<b>A ${esc(b.k === 'yes' ? 'building' : b.k.replace(/_/g, ' '))}</b>, ${b.h} m tall <span class="m">(${['a placeholder', "OpenStreetMap's tag", "Microsoft's estimate", 'measured from the 2018 lidar'][b.t]}; outline © OpenStreetMap)</span>`) }
+    if (b) rows.push(`<b>A ${esc(b.k === 'yes' ? 'building' : b.k.replace(/_/g, ' '))}</b>, ${b.h} m tall <span class="m">(${['a placeholder', "OpenStreetMap's tag", "Microsoft's estimate", 'measured from the 2018 lidar'][b.t]}; outline © OpenStreetMap)</span>`)
+    if (b && b.k === 'houseboat') { let best = 30, who = null; for (const f of lay.data.get('docks') || []) { const d = Math.hypot(f.point[0] - x, f.point[1] - y); if (d < best) { best = d; who = f.props } }
+      if (who) rows.push(`Nearest county address: <b>${esc(String(who.Formatted || '').trim().toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()))}</b> <span class="m">(Marin County address points, ${Math.round(best)} m away)</span>`) } }
   rows.push(`Ground ${groundAt(x, y).toFixed(1)} m above NAVD88 <span class="m">(USGS lidar, 2018)</span>${groundAt(x, y) < state.level ? ` · below the water drawn now (${state.level.toFixed(2)} m)` : ''}`)
   for (const def of LAYERS) for (const f of lay.data.get(def.id) || []) if (f.type === 'area' && x >= f.box[0] && x <= f.box[2] && y >= f.box[1] && y <= f.box[3] && within(f.rings, x, y)) {
     const v = f.props[def.field], more = def.say?.(v, f.props); rows.push(`<b>${esc(def.name)}</b>: ${esc(v ?? '')}${more ? ` <span class="m">(${esc(more)})</span>` : ''}`); break }
   const near = news.facts.filter((f) => { const p = spot(f); return p && Math.hypot(p.x - x, p.y - y) < 120 }).slice(0, 3)
   for (const f of near) rows.push(`<span class="m">${dayWords(factDay(f))}, ${esc(f.source)}:</span> ${esc(f.claim)} <a href="${esc(f.url)}" target="_blank" rel="noopener">source</a>`)
-  const unread = LAYERS.filter((d) => !lay.data.has(d.id)).length
-  const card = document.getElementById('card'); card.innerHTML = `<span class="x">close</span><h4>Here</h4>${rows.map((r) => `<div class="row">${r}</div>`).join('')}${unread ? `<div class="row m">${unread} layers have not been read; tick them under "layers" and click again.</div>` : ''}`; card.hidden = false
-  card.querySelector('.x').onclick = () => { card.hidden = true }
+  const unread = LAYERS.filter((d) => !d.news && !lay.data.has(d.id)).length
+  showCard('Here', rows, unread ? `<div class="row m">${unread} layers have not been read; tick them under "layers" and click again.</div>` : '')
 })
 
 // ---- play: propositions to say yes or no to, and what follows ------------------------------------------------
 // One thing here is computed: where the water goes. The bay is let onto the lidar ground at the tide chosen, cell
 // to cell, so low ground the bay cannot reach stays dry and a raised road holds it back. Everything else that moves
-// a dial is a rule of thumb written by hand, and each line says which it is. A game to show that choices have
-// consequences, not a forecast.
+// a dial is a rule of thumb written by hand, and each line says which it is. Propositions to say yes or no to,
+// to show that choices have consequences; not a forecast.
 const play = { yes: new Set(), tide: 'now', ground: elev.slice(), wet: new Uint8Array(nx * ny), mask: null, base: null }
 play.mask = new THREE.DataTexture(new Uint8Array(nx * ny), nx, ny, THREE.RedFormat); play.mask.magFilter = play.mask.minFilter = THREE.LinearFilter
 function floodNow() {
@@ -531,35 +582,57 @@ const TIDES = {
 const area = (p) => { let a = 0; for (let i = 0; i < p.length; i++) { const q0 = p[i], q1 = p[(i + 1) % p.length]; a += q0[0] * q1[1] - q1[0] * q0[1] } return Math.abs(a / 2) }
 const setTop = (part, top) => { const pos = bGeo.attributes.position.array, [first, walls, roof, , , old] = part; for (let i = first; i < first + walls + roof; i++) if (Math.abs(pos[i * 3 + 1] - old) < 0.01) pos[i * 3 + 1] = top; part[5] = top; bGeo.attributes.position.needsUpdate = true }
 const road5 = town.roads.find((r) => /gate 5/i.test(r.n || '')), mid = (r) => r.p[Math.floor(r.p.length / 2)]
-const boats = bParts.filter((p) => p[4] === 'houseboat'), boatAt = boats.length ? boats[Math.floor(boats.length / 2)][6].p[0] : [SX / 2, SY / 2]
+const TALL = 14.3                                                      // 47 feet
+const boats = bParts.filter((p) => p[4] === 'houseboat'), tenth = boats.filter((p) => p[3] < 0.1), boatAt = boats.length ? boats[Math.floor(boats.length / 2)][6].p[0] : [SX / 2, SY / 2]
 const shipyard = [545050 - W.e0 - 800, 4190050 - W.n0 + 1150]          // the middle of the Marinship, from the anchor downtown
 // each proposition: where it sits, the question, what it does to the town, and what follows (computed lines are added by the flood)
+// street trees for the greening proposition: one every 14 m, on alternate sides, along the streets of the low flat ground
+let planted = null
+function plantStreets() { if (planted) return planted; const at = []
+  for (const r of town.roads) { if (!['residential', 'tertiary', 'secondary', 'unclassified'].includes(r.k) || r.z || r.u) continue; let run = 7, side = 1; const off = (ROAD_W[r.k] || 6) / 2 + 2.2
+    for (let i = 0; i + 1 < r.p.length; i++) { const a = r.p[i], b = r.p[i + 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1
+      for (; run < l; run += 14, side = -side) { const x = a[0] + (b[0] - a[0]) * run / l - (b[1] - a[1]) / l * off * side, y = a[1] + (b[1] - a[1]) * run / l + (b[0] - a[0]) / l * off * side; if (x < 2 || y < 2 || x > SX - 2 || y > SY - 2) continue
+        const g = groundAt(x, y); if (g > W.water_m + 1.2 && g < 14) at.push([x, y, g]) } run -= l } }
+  const geo = new THREE.IcosahedronGeometry(1, 1); geo.translate(0, 0.25, 0)
+  planted = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0, flatShading: true }), at.length); const m = new THREE.Matrix4(), q4 = new THREE.Quaternion(), c = new THREE.Color()
+  at.forEach(([x, y, g], i) => { const r = hash(i + 99), h = 6 + r * 4; m.compose(new THREE.Vector3(X(x), g + h * 0.5, Z(y)), q4, new THREE.Vector3(2.6 + r, h * 0.5, 2.6 + r)); planted.setMatrixAt(i, m); c.setRGB(0.30 + r * 0.10, 0.62 + r * 0.12, 0.26 + r * 0.06); planted.setColorAt(i, c) })
+  planted.castShadow = true; planted.frustumCulled = false; planted.visible = false; scene.add(planted); return planted }
+// each proposition: where it sits (if it has a place), the question, what it does to the picture, and what follows.
+// A rule is [dial, how far, why, counted?]; the why may be worked out when asked.
 const PROPS = [
   { id: 'road', at: road5 ? mid(road5) : shipyard, short: 'Gate 5 Road', ask: 'Raise Gate 5 Road by half a metre?', about: 'The road to the floating homes floods on the highest tides. News of 22 November 2026 reported bay water reaching Bridgeway here.',
     apply(on) { if (!road5) return; for (let i = 0; i + 1 < road5.p.length; i++) { const a = road5.p[i], b = road5.p[i + 1], n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2)
         for (let s = 0; s <= n; s++) { const x = a[0] + (b[0] - a[0]) * s / n, y = a[1] + (b[1] - a[1]) * s / n; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const cx = Math.floor(x / RES) + dx, cy = Math.floor((SY - y) / RES) + dy; if (cx >= 0 && cy >= 0 && cx < nx && cy < ny) { const k = cy * nx + cx; play.ground[k] = elev[k] > W.water_m + 0.07 ? elev[k] + (on ? 0.5 : 0) : elev[k] } } } } },
     rules: [['money', -1, 'Road works cost money; no estimate is used here.']] },
-  { id: 'boats', at: boatAt, short: 'Floating homes', ask: 'Remove the floating homes?', about: `${boats.length} floating homes are drawn in this window, from OpenStreetMap. They are legal homes on leased berths, and part of what visitors come to see.`,
-    apply(on) { for (const part of boats) { part[6].gone = on; const pos = bGeo.attributes.position.array, [first, walls, roof] = part; for (let i = first; i < first + walls + roof; i++) pos[i * 3 + 1] = on ? -900 : bRest[i * 3 + 1] } bGeo.attributes.position.needsUpdate = true; if (!on) applyWater() },
-    rules: [['homes', -3, `${boats.length} homes gone (counted from the map).`, true], ['money', -1, 'Property tax and visitors lost; no figure is used.'], ['nature', 1, 'Less shade and discharge over the bay floor; a guess.']] },
-  { id: 'trees', at: [545050 - W.e0 - 600, 4190050 - W.n0 + 100], short: 'The trees', ask: 'Cut down every tree?', about: `${treeRand ? treeRand.length.toLocaleString('en') : 'The'} canopy bodies drawn from the 2018 lidar.`,
-    apply(on) { if (trees) { trees.visible = !on && treesOn.checked } },
-    rules: [['nature', -3, 'The canopy is the town\'s habitat and shade.'], ['safety', -1, 'Roots hold steep slopes and canopy slows rain; a rule of thumb.'], ['money', -1, 'Homes among trees are worth more; a rule of thumb.']] },
-  { id: 'tall', at: shipyard, short: 'The Marinship', ask: 'Allow four storeys of homes across the Marinship?', about: 'The working waterfront, on filled ground. Measure X, on who decides its zoning, was on the ballot in November 2026.',
+  { id: 'boats', at: boatAt, short: 'Floating homes', ask: 'Retire one floating-home berth in ten as leases end?', about: `${boats.length} floating homes are drawn in this window, from OpenStreetMap. They are legal homes on leased berths, and part of what visitors come to see. Their shade and moorings lie over the shallow bay floor.`,
+    apply(on) { for (const part of tenth) { part[6].gone = on; const pos = bGeo.attributes.position.array, [first, walls, roof] = part; for (let i = first; i < first + walls + roof; i++) pos[i * 3 + 1] = on ? -900 : bRest[i * 3 + 1] } bGeo.attributes.position.needsUpdate = true; if (!on) applyWater() },
+    rules: [['homes', -1, `${tenth.length} of ${boats.length} homes gone (counted from the map).`, true], ['nature', 1, 'More light on the bay floor, where eelgrass grows; a guess.'], ['life', -1, 'Fewer of the homes people come to see, and fewer neighbours on each dock; a judgement.']] },
+  { id: 'green', at: [545050 - W.e0 - 600, 4190050 - W.n0 + 100], short: 'Street trees', ask: 'Plant street trees along the flat streets?', about: `${treeRand ? treeRand.length.toLocaleString('en') + ' canopy tops stand in the 2018 lidar, most of them on the hill.' : ''} The filled ground by the water has few.`,
+    apply(on) { plantStreets().visible = on },
+    rules: [['nature', 1, () => `${plantStreets().count.toLocaleString('en')} trees drawn, one every 14 m along streets on ground below 14 m.`, true], ['life', 1, 'Shade on the flat streets; a rule of thumb.'], ['money', -1, 'Planting, watering and pruning are a yearly cost to the city; no figure is used.']] },
+  { id: 'tall', at: shipyard, short: 'The Marinship', ask: 'Let buildings in the Marinship rise from 32 to 47 feet, with homes above?', about: "The working waterfront, on filled ground. Measure X on the November 2026 ballot asked for 47 feet in the industrial zone (the city's summary of it). Which way the vote went is not used here.",
     apply(on) { play.tall = 0; play.tallHomes = 0; for (const part of bParts) { const b = part[6]; if (b.k === 'houseboat' || !b.ship) continue; const g = part[5] - b.h
-        if (on && b.h < 13) { b.was = b.h; b.raised = true; setTop(part, g + 13); play.tall++; play.tallHomes += Math.round(area(b.p) * Math.max(0, 4 - Math.round(b.h / 3.3)) / 110) } else if (!on && b.raised) { setTop(part, part[5] - 13 + b.was); b.raised = false } } },
-    rules: [['money', 1, 'More property tax, and working yards displaced; a rule of thumb.'], ['nature', -1, 'More people and traffic by the water; a rule of thumb.']] },
-  { id: 'tourists', at: [545050 - W.e0 + 760, 4190050 - W.n0 + 60], short: 'Visitors', ask: 'Ban tourists?', about: 'The ferry to Sausalito carried 377,595 riders in the year to mid-2025. The city budgets $2.30 million of hotel tax, $2.58 million of sales tax and $3.03 million of parking for 2026-27.',
-    apply() {}, rules: [['money', -3, 'All of the hotel tax and, by a rule of thumb, half of the sales tax and parking: about $5 million of a $23 million general fund.'], ['nature', 1, 'Fewer cars and less litter; a guess.'], ['homes', 0, 'Nothing changes on the map: the town\'s books change.']] },
+        if (on && b.h < TALL) { b.was = b.h; b.raised = true; setTop(part, g + TALL); play.tall++; play.tallHomes += Math.round(area(b.p) * Math.max(0, 4 - Math.round(b.h / 3.3)) / 110) } else if (!on && b.raised) { setTop(part, part[5] - TALL + b.was); b.raised = false } } },
+    rules: [['money', 1, 'More property tax; a rule of thumb.'], ['life', -1, 'Boatyards and workshops pushed out by higher rents; a rule of thumb.'], ['nature', -1, 'More people and traffic by the water; a rule of thumb.']] },
+  { id: 'visitors', at: [545050 - W.e0 + 760, 4190050 - W.n0 + 60], short: 'Visitors', ask: 'Cap tour buses and rental bikes downtown on summer weekends?', about: 'The ferry to Sausalito carried 377,595 riders in the year to mid-2025. The city budgets $2.30 million of hotel tax, $2.58 million of sales tax and $3.03 million of parking for 2026-27.',
+    apply() {}, rules: [['life', 1, 'Less crowding on Bridgeway and at the ferry landing; a judgement.'], ['money', -1, 'Fewer day visitors spend less: some part of $5.6 million of sales tax and parking; no estimate is made.']] },
+  { id: 'homes', short: 'Housing', ask: 'Build the 724 homes the state asks the town to plan for by 2031?', about: 'The housing plan adopted in May 2025 has to make room for 724 homes. Where they would stand is not drawn yet.',
+    apply() {}, rules: [['homes', 3, '724 homes, the number in the plan.', true], ['money', 1, 'More property tax, and more to serve; a rule of thumb.'], ['life', -1, 'More traffic on the two roads out of town; a rule of thumb.']] },
+  { id: 'sewers', short: 'Sewers', ask: 'Replace the oldest sewer mains over ten years?', about: 'Old pipes let rain in and sewage out in storms. No map of the pipes is used here.',
+    apply() {}, rules: [['money', -2, 'A large public work; no estimate is used.'], ['nature', 1, 'Fewer spills to the bay in storms; a rule of thumb.'], ['safety', 1, 'Fewer backups into streets and homes; a rule of thumb.']] },
+  { id: 'shelter', short: 'Shelter', ask: 'Fund year-round shelter and services for people without housing?', about: 'Every town decides how much of this to carry. No count of people is used here.',
+    apply() {}, rules: [['money', -1, 'A yearly cost; no figure is used.'], ['homes', 1, 'People housed; a rule of thumb.'], ['safety', 1, 'Fewer people sleeping outdoors or on unsafe boats; a judgement.']] },
+  { id: 'tax', short: 'Parcel tax', ask: 'Add a parcel tax of $300 a year to pay for it?', about: 'A flat yearly charge on each parcel, the same for a small home as a large one.',
+    apply() {}, rules: [['money', 2, 'New yearly revenue; no count of parcels is used.'], ['life', -1, 'A higher cost of living here; a judgement.']] },
 ]
 // which buildings stand in the Marinship: by Sausalito's zoning (industrial, waterfront, commercial waterfront) once that layer has answered
 async function markShipyard() { try { const def = LAYERS.find((d) => d.id === 'zoning'); await layerOn(def); const zones = lay.data.get('zoning').filter((f) => /^(I|W|CW)$/.test(f.props.Zoning))
     for (const part of bParts) { const b = part[6], cx = b.p.reduce((a, v) => a + v[0], 0) / b.p.length, cy = b.p.reduce((a, v) => a + v[1], 0) / b.p.length; b.ship = zones.some((f) => cx >= f.box[0] && cx <= f.box[2] && cy >= f.box[1] && cy <= f.box[3] && within(f.rings, cx, cy)) } lay.mesh.get('zoning').visible = lay.on.has('zoning') } catch (e) { /* without the zoning the proposition does nothing, and says so */ } }
-const DIALS = { homes: 'homes', money: 'money', nature: 'nature', safety: 'safety' }
+const DIALS = { homes: 'homes', money: 'budget', nature: 'nature', safety: 'safety', life: 'daily life' }
 function score() {
-  const f = floodNow(), v = { homes: 0, money: 0, nature: 0, safety: 0 }, why = []
-  for (const p of PROPS) if (play.yes.has(p.id)) for (const [k, n, text, counted] of p.rules) { v[k] += n; why.push([k, n, `${p.short}: ${text}`, !!counted]) }
-  if (play.yes.has('tall')) { const h = play.tallHomes || 0; v.homes += h > 600 ? 3 : h > 200 ? 2 : h > 0 ? 1 : 0; why.push(['homes', 1, `The Marinship: about ${h.toLocaleString('en')} homes in ${play.tall || 0} buildings raised to four storeys, at one home to 110 m² of added floor (a rule of thumb).`, false])
+  const f = floodNow(), v = { homes: 0, money: 0, nature: 0, safety: 0, life: 0 }, why = []
+  for (const p of PROPS) if (play.yes.has(p.id)) for (const [k, n, text, counted] of p.rules) { v[k] += n; why.push([k, n, `${p.short}: ${typeof text === 'function' ? text() : text}`, !!counted]) }
+  if (play.yes.has('tall')) { const h = play.tallHomes || 0; v.homes += h > 600 ? 3 : h > 200 ? 2 : h > 0 ? 1 : 0; why.push(['homes', 1, `The Marinship: about ${h.toLocaleString('en')} homes in ${play.tall || 0} buildings raised to 47 feet, at one home to 110 m² of added floor (a rule of thumb).`, false])
     if (f.tallWet) why.push(['safety', -1, `${f.tallWet} of those raised buildings stand in the water at this tide.`, true]) }
   const s = -Math.min(3, Math.round((f.buildingsWet / 25 + f.roadWet / 800) * 10) / 10); v.safety += s
   why.unshift(['safety', s, `At ${f.level.toFixed(2)} m, ${f.buildingsWet} buildings and ${f.roadWet.toLocaleString('en')} m of road are in the water.`, true])
@@ -569,10 +642,10 @@ function drawPlay() {
   const { v, why, f } = score(), host = document.getElementById('play'), dials = document.getElementById('dials')
   dials.innerHTML = Object.keys(DIALS).map((k) => { const x = Math.max(-3, Math.min(3, v[k])); return `<div class="d">${DIALS[k]}<div class="bar"><span style="left:${x < 0 ? 50 + x / 3 * 50 : 50}%;width:${Math.abs(x) / 3 * 50}%;background:${x < 0 ? '#c0392b' : '#2e8b57'}"></span><div class="mid"></div></div></div>` }).join('')
   dials.hidden = q.has('bare') || (!play.yes.size && play.tide === 'now' && document.getElementById('play').hidden)
-  host.innerHTML = `<div class="m">A game to show that choices have consequences. One thing is computed: where the water goes on the measured ground. The rest are rules of thumb, and each line says which.</div>
+  host.innerHTML = `<div class="m">Propositions to say yes or no to, and what would follow. One thing is computed: where the water goes on the measured ground. The rest are rules of thumb or judgements, and each line says which.</div>
     <div class="prop"><b>The tide</b><div class="yn">${Object.keys(TIDES).map((k) => `<button data-t="${k}" class="${play.tide === k ? 'on' : ''}">${esc(TIDES[k].name)}</button>`).join('')}</div><div class="why m">${esc(TIDES[play.tide].say || 'The level measured or predicted for the date and time on the clock.')}</div></div>
     ${PROPS.map((p) => `<div class="prop"><b>${esc(p.ask)}</b><div class="m">${esc(p.about)}</div><div class="yn"><button data-y="${p.id}" class="${play.yes.has(p.id) ? 'on' : ''}">yes</button><button data-n="${p.id}" class="${play.yes.has(p.id) ? '' : 'on'}">no</button></div></div>`).join('')}
-    <div class="prop"><b>What follows</b>${why.map(([k, n, text, counted]) => `<div class="why">${counted ? '●' : '○'} <i>${k} ${n > 0 ? '+' : n < 0 ? '−' : ''}</i> ${esc(text)}</div>`).join('')}<div class="why m">● counted or computed from the map and the ground · ○ a rule of thumb written by hand</div></div>
+    <div class="prop"><b>What follows</b>${why.map(([k, n, text, counted]) => `<div class="why">${counted ? '●' : '○'} <i>${DIALS[k]} ${n > 0 ? '+' : n < 0 ? '−' : ''}</i> ${esc(text)}</div>`).join('')}<div class="why m">● counted or computed from the map and the ground · ○ a rule of thumb written by hand</div></div>
     <div class="prop"><button id="playReset">put everything back</button></div>`
   for (const b of host.querySelectorAll('[data-t]')) b.onclick = () => setTide(b.dataset.t)
   for (const b of host.querySelectorAll('[data-y]')) b.onclick = () => say(b.dataset.y, true)
@@ -585,11 +658,15 @@ function say(id, on, quiet) { const p = PROPS.find((x) => x.id === id); if (!p |
   if (id === 'tall') shipReady.then(() => { p.apply(play.yes.has('tall')); drawPlay() }) }      // the Marinship is known only once the zoning map has answered
 function setTide(k) { play.tide = k; if (TIDES[k].level) { state.live = false; state.level = TIDES[k].level; note.textContent = TIDES[k].say; applyWater() } else goLive(); drawPlay() }
 // the propositions stand on the map as small chips where their issue is; a click opens the question
-{ const host = document.getElementById('chips'); for (const p of PROPS) { const c = document.createElement('div'); c.className = 'chip'; c.dataset.id = p.id; c.textContent = p.short; c.onclick = () => { toggle('play', true); drawPlay(); document.querySelector(`#play [data-y="${p.id}"]`)?.scrollIntoView({ block: 'center' }) }; host.append(c) } }
+{ const host = document.getElementById('chips'); for (const p of PROPS) { if (!p.at) continue; const c = document.createElement('div'); c.className = 'chip'; c.dataset.id = p.id; c.textContent = p.short; c.onclick = () => { toggle('play', true); drawPlay(); document.querySelector(`#play [data-y="${p.id}"]`)?.scrollIntoView({ block: 'center' }) }; host.append(c) } }
 const chipAt = new THREE.Vector3()
+const overAt = new THREE.Vector3(), over = (el, x, g, z) => { overAt.set(x, g, z).project(camera); const ok = overAt.z < 1 && Math.abs(overAt.x) < 1 && Math.abs(overAt.y) < 1; el.style.display = ok && !q.has('bare') ? '' : 'none'; if (ok) { el.style.left = `${(overAt.x + 1) / 2 * innerWidth}px`; el.style.top = `${(1 - overAt.y) / 2 * innerHeight}px` } }
 function placeChips() {
+ if (news.on) for (const mk of news.marks) over(mk.el, X(mk.x), mk.g + 34, Z(mk.y))
+ for (const L of lay.labels) if (!L.el.hidden) over(L.el, X(L.x), state.level + 14, Z(L.y))
+ const put = []
  for (const c of document.querySelectorAll('.chip')) { const p = PROPS.find((x) => x.id === c.dataset.id); chipAt.set(X(p.at[0]), groundAt(p.at[0], p.at[1]) + 45, Z(p.at[1])).project(camera)
-    const ok = chipAt.z < 1 && Math.abs(chipAt.x) < 1 && Math.abs(chipAt.y) < 1; c.style.display = ok && !q.has('bare') ? '' : 'none'; if (ok) { c.style.left = `${(chipAt.x + 1) / 2 * innerWidth}px`; c.style.top = `${(1 - chipAt.y) / 2 * innerHeight}px` } } }
+    const sx = (chipAt.x + 1) / 2 * innerWidth, sy = (1 - chipAt.y) / 2 * innerHeight, ok = chipAt.z < 1 && Math.abs(chipAt.x) < 1 && Math.abs(chipAt.y) < 1 && !put.some(([x, y]) => Math.abs(x - sx) < 110 && Math.abs(y - sy) < 26); if (ok) put.push([sx, sy]); c.style.display = ok && !q.has('bare') ? '' : 'none'; if (ok) { c.style.left = `${(chipAt.x + 1) / 2 * innerWidth}px`; c.style.top = `${(1 - chipAt.y) / 2 * innerHeight}px` } } }
 
 // ---- controls --------------------------------------------------------------------------------------
 const mk = (host, table, key, apply) => { for (const k in table) { const b = document.createElement('button'); b.textContent = table[k].name; b.dataset.k = k; b.style.marginRight = '4px'; b.style.marginBottom = '3px'; b.onclick = () => { state[key] = k; apply() }; document.getElementById(host).append(b) } }
@@ -608,8 +685,9 @@ addEventListener('resize', size); size(); applyLook(); applyCam(); applyWater()
 if (q.has('pos') && q.has('at')) { const v = (k) => q.get(k).split(',').map(Number); camera.position.set(v('pos')[0] + AX, v('pos')[1], v('pos')[2] + AZ); controls.target.set(v('at')[0] + AX, v('at')[1], v('at')[2] + AZ); controls.update() }   // a free view for tests, in the same metres as the named views
 if (q.has('level')) note.textContent = `${state.level.toFixed(2)} m above NAVD88, set in the address for a test`
 else if (q.has('day') || q.has('hour')) goMoment(); else goLive()
-if (q.get('news') !== '0') loadNews()
+
 const shipReady = markShipyard(); floodNow()
+layerOn(LAYERS.find((d) => d.id === 'docks')).catch(() => {})                 // dock addresses, read quietly so a click on a floating home can name it
 if (q.has('yes')) setTimeout(() => { if (q.get('tide')) setTide(q.get('tide')); for (const id of q.get('yes').split(',')) say(id, true) }, 3500)   // propositions from the address, for tests and links
 document.getElementById('wait').remove()
 // the picture first: every panel is closed until its button is pressed, and one is open at a time on a small screen
@@ -617,19 +695,18 @@ const PANELS = ['ctl', 'play', 'layers', 'news', 'credit'], bar = document.getEl
 function toggle(id, on = document.getElementById(id).hidden) {
   if (on) for (const p of PANELS) document.getElementById(p).hidden = true                                         // one panel at a time, all in one place
   document.getElementById(id).hidden = !on
-  for (const b of bar.querySelectorAll('#menu button')) b.classList.toggle('on', !document.getElementById(b.dataset.p).hidden)
-  news.pins.visible = !document.getElementById('news').hidden; dirty = true
+  for (const b of bar.querySelectorAll('#menu button')) b.classList.toggle('on', !document.getElementById(b.dataset.p).hidden || (b.dataset.p === 'layers' && !document.getElementById('news').hidden))
+  dirty = true
   if (id === 'play') drawPlay()
 }
 for (const b of bar.querySelectorAll('#menu button')) b.onclick = () => toggle(b.dataset.p)
 // the menu is one small floating button at the top right; it starts open on a wide screen and closed on a phone
 const burger = document.getElementById('burger'), menu = document.getElementById('menu'), setMenu = (open) => { menu.hidden = !open; burger.setAttribute('aria-expanded', String(open)) }
 burger.onclick = () => setMenu(menu.hidden); setMenu(innerWidth >= 720 && q.get('menu') !== '0'); document.getElementById('readout').hidden = false
-news.pins.visible = false
 for (const id of (q.get('open') || '').split(',')) if (PANELS.includes(id)) toggle(id, true)
 if (q.has('layer')) for (const id of q.get('layer').split(',')) { const i = LAYERS.findIndex((d) => d.id === id); if (i >= 0) { const box = document.querySelectorAll('#layerList input')[i]; box.checked = true; box.onchange() } }   // layers from the address, for tests and links
 if (q.has('click')) setTimeout(() => { const [fx, fy] = q.get('click').split(',').map(Number), o = { clientX: fx * innerWidth, clientY: fy * innerHeight, bubbles: true }; renderer.domElement.dispatchEvent(new PointerEvent('pointerdown', o)); renderer.domElement.dispatchEvent(new PointerEvent('pointerup', o)) }, 6000)   // a click from the address, for tests
-if (q.has('bare')) for (const id of ['ctl', 'credit', 'title', 'bar', 'readout', 'news', 'layers', 'card', 'play', 'dials', 'chips']) document.getElementById(id).style.display = 'none'
+if (q.has('bare')) for (const id of ['ctl', 'credit', 'title', 'bar', 'readout', 'news', 'layers', 'card', 'play', 'dials', 'chips', 'marks']) document.getElementById(id).style.display = 'none'
 // ---- the tour: when nobody has touched the page for a while, the view travels by itself between the named
 // views, resting at each. It starts from wherever the view was left and stops the instant anyone touches.
 // (After the camera of github.com/anselm/bay-area-twin: a wait before starting, eased legs, never a snap.)

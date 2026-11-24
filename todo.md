@@ -3,6 +3,10 @@
 Open work for this repository, one line each. Engine work that has to happen in esimv1
 is marked (esimv1) and is also noted there.
 
+## Done 24 November
+
+- Rain lines on by default; zoning as a volume and evacuation zones as curtains; news as a layer with marks that open; nine milder propositions and a daily-life dial; floating homes painted, docks named from county addresses; 776 boats from the lidar (devlog 20261124).
+
 ## The demo, one day (Anselm, 2026-11-23)
 
 His direction: propositions people say yes or no to, placed on the map where the issue is; "i just want to let people

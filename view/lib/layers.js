@@ -9,12 +9,14 @@ const hue = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charC
 const ramp = (order, colours) => (v) => colours[Math.max(0, order.indexOf(v))] || '#999999'
 
 export const LAYERS = [
+  // the news is a layer like the others: the page asks the inhaler (a separate service) and marks the places it names
+  { id: 'news', name: 'News', by: 'Places named in local news, notices and public posts, as read by the inhaler. Click a mark for what was said there; nothing is checked for truth', news: true, on: true, colour: () => null },
   // two layers that come with the page's own data, in window metres: `local(town)` gives their shapes
   { id: 'creeks', name: 'Creeks, as mapped', by: 'Streams and ditches from OpenStreetMap (© OpenStreetMap contributors). Paler where the map says the water runs in a culvert', colour: () => '#2b7fd1', width: (p) => 3,
     local: (town) => (town.creeks || []).filter((c) => ['stream', 'river', 'ditch', 'drain', 'canal'].includes(c.k)).map((c) => ({ type: 'line', line: c.p, props: { name: c.n || 'a stream', culvert: c.u } })), field: 'name', on: true },
   { id: 'drains', name: 'Where rain runs', by: 'Computed here from the 2018 lidar ground: the line water would take across the bare ground wherever 2 hectares or more drain through. In town most of this runs in pipes, which this does not know', colour: () => '#5aa9e6',
-    width: (p) => Math.min(9, 1.6 + Math.sqrt(p.hectares) * 0.45), local: (town) => (town.drains || []).map((d) => ({ type: 'line', line: d.p, props: { hectares: d.a, name: `${d.a} hectares drain through here` } })), field: 'name' },
-  { id: 'zoning', name: 'Zoning', url: MARIN + 'Zoning_of_Sausalito/FeatureServer/123', field: 'Zoning', by: "Sausalito's zoning map as hosted by Marin County, 2023",
+    width: (p) => Math.min(9, 1.6 + Math.sqrt(p.hectares) * 0.45), local: (town) => (town.drains || []).map((d) => ({ type: 'line', line: d.p, props: { hectares: d.a, name: `${d.a} hectares drain through here` } })), field: 'name', on: true },
+  { id: 'zoning', name: 'Zoning', url: MARIN + 'Zoning_of_Sausalito/FeatureServer/123', field: 'Zoning', form: 'volume', height_m: 9.75, flat: (v) => /^(OS|OA|PP|PR)$/.test(v), by: "Sausalito's zoning map as hosted by Marin County, 2023, drawn as a volume 32 feet tall: the height limit the city's code gives for most districts (read in summaries of the code, not in its tables). A building that stands through the lid is taller than that. Open space and parks stay on the ground",
     colour: (v) => /^R/.test(v) ? `hsl(${48 - Math.min(30, parseFloat(String(v).split('-')[1]) || 0) * 4} 85% 60%)` : /^C/.test(v) ? '#e2574c' : /^(I|W)$/.test(v) ? '#8e6bbf' : /^(OS|PP|PR|OA)$/.test(v) ? '#58a55c' : /^PI$/.test(v) ? '#4f86c6' : '#999999',
     say: (v) => ({ R: 'residential', C: 'commercial', I: 'industrial', W: 'waterfront', OS: 'open space', PP: 'public park', PI: 'public and institutional', OA: 'open area', PR: 'public recreation', H: 'houseboats' }[String(v).split('-')[0].replace(/[RW-]?$/, (m) => m)] || ({ CR: 'commercial residential', CC: 'central commercial', CW: 'commercial waterfront', CN: 'neighbourhood commercial', CS: 'commercial service' }[String(v).split('-')[0]]) || '') },
   { id: 'plan', name: 'General plan', url: MARIN + 'General_Plan_of_Sausalito/FeatureServer/0', field: 'GeneralPlan', by: "Sausalito's general plan land uses as hosted by Marin County",
@@ -23,7 +25,7 @@ export const LAYERS = [
     colour: (v) => /^V/.test(v) ? '#1f5fbf' : '#4f9be0', say: (v) => /^V/.test(v) ? 'coastal, with waves' : /^A/.test(v) ? 'one percent a year' : '' },
   { id: 'slr20', name: 'Sea level rise, 20 inches', url: MARIN + 'Sea_Level_Rise_%E2%80%93_20_inches/FeatureServer/0', field: 'SLR', by: "Marin County's sea-level-rise area for 20 inches, its own layer", colour: () => '#2f8fd0' },
   { id: 'slr60', name: 'Sea level rise, 5 feet', url: MARIN + 'Sea_Level_Rise_%E2%80%93_5_feet/FeatureServer/0', field: 'SLR', by: "Marin County's sea-level-rise area for 5 feet, its own layer", colour: () => '#1b5fa8' },
-  { id: 'evac', name: 'Evacuation zones', url: MARIN + 'Zonehaven_Marin_zones_240801/FeatureServer/0', field: 'zone_id', by: 'Evacuation zones (Zonehaven) as hosted by Marin County, August 2024, with its estimate of residents',
+  { id: 'evac', name: 'Evacuation zones', url: MARIN + 'Zonehaven_Marin_zones_240801/FeatureServer/0', field: 'zone_id', form: 'curtain', height_m: 45, by: 'Evacuation zones (Zonehaven) as hosted by Marin County, August 2024, with its estimate of residents; drawn as curtains along their edges',
     colour: (v) => `hsl(${hue(v)} 55% 60%)`, say: (v, p) => p.est_popula ? `about ${Math.round(p.est_popula).toLocaleString('en')} residents` : '' },
   { id: 'liq', name: 'Liquefaction', url: MARIN + 'Liquefaction/FeatureServer/0', field: 'Liquefaction', by: 'Liquefaction susceptibility as hosted by Marin County',
     colour: ramp(['VL', 'L', 'M', 'H', 'VH', 'W'], ['#f3e9c0', '#f0d37a', '#eda84a', '#e0683a', '#b8312f', '#00000000']), say: (v) => ({ VL: 'very low', L: 'low', M: 'moderate', H: 'high', VH: 'very high', W: 'water' }[v] || '') },
@@ -32,6 +34,7 @@ export const LAYERS = [
     colour: ramp(['Moderate', 'High', 'Very High'], ['#f2d04b', '#ee8b3a', '#d0362c']) },
   { id: 'tsunami', name: 'Tsunami hazard area', url: MARIN + 'Marin_County_Tsunami/FeatureServer/1', field: 'Evacuate', by: "California Geological Survey's tsunami hazard area as hosted by Marin County", colour: () => '#2aa7a0' },
   { id: 'parks', name: 'Parks and open space', url: MARIN + 'Parks/FeatureServer/0', field: 'ParkName', by: 'Parks as hosted by Marin County', colour: () => '#58a55c', say: (v, p) => String(p.ParkType || '').replace(/_/g, '').trim() },
+  { id: 'docks', name: 'Floating-home docks', url: MARIN + 'Situs_Address_Points/FeatureServer/0', where: "Street LIKE '%DOCK%' OR Street LIKE '%PIER'", field: 'Street', form: 'labels', by: "Each dock's name and the number of addresses Marin County lists on it. Click a floating home for its nearest address", colour: () => null, thin: true },
   { id: 'parcels', name: 'Parcels', url: MARIN + 'Parcels/FeatureServer/0', field: 'Parcel', by: "Marin County's parcels; lines only. The county gives them as they are, with no stated licence", colour: () => null, thin: true },
   { id: 'bus', name: 'Bus routes', url: MARIN + 'Bus_Route_Golden_Gate_Transit/FeatureServer/0', field: 'Name', by: 'Golden Gate Transit bus routes as hosted by Marin County', colour: () => '#c2410c' },
   { id: 'schools', name: 'Schools', url: MARIN + 'Schools/FeatureServer/0', field: 'Name', by: 'Schools as hosted by Marin County', colour: () => '#7c3aed', say: (v, p) => [p.Grade, p.District].filter(Boolean).join(', ') },
