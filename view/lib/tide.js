@@ -42,3 +42,25 @@ export async function tidePredicted(station, when) {
   const v = await days.get(key), h = (when - day) / 3600000, i = Math.min(v.length - 2, Math.floor(h)), u = h - i
   return { station, at: when, level_m: v[i] * (1 - u) + v[i + 1] * u, predicted: true }
 }
+
+// A stretch of days around now on one six-minute grid: what the gauge measured, what the tide table said, and
+// what to expect next. The expected level is the table plus the gap the gauge has been running above or below it
+// over its last tide cycle (12.4 hours of readings): a storm surge carried forward unchanged, which is a
+// rule of thumb and not a forecast. A weather service's own forecast, when there is one, is better.
+// -> { station, t0: ms, step: ms, table[], measured[] (NaN where there is none), last: index of the newest
+//      reading, surge_m, at(Date) -> { level_m, kind: 'measured' | 'expected' | 'table' } | null }
+export async function tideWeek(station, { back_h = 96, ahead_h = 72, now = new Date() } = {}) {
+  const stamp = (d) => d.toISOString().slice(0, 16).replace(/-/g, '').replace('T', '%20'), a = new Date(now.getTime() - back_h * 3600000), b = new Date(now.getTime() + ahead_h * 3600000)
+  const [tb, ms] = await Promise.all([
+    ask(station, `product=predictions&datum=NAVD&begin_date=${stamp(a)}&end_date=${stamp(b)}`),
+    ask(station, `product=water_level&datum=NAVD&begin_date=${stamp(a)}&end_date=${stamp(now)}`).catch(() => ({ data: [] })),
+  ])
+  const step = 360000, t0 = utc(tb.predictions[0].t).getTime(), table = tb.predictions.map((p) => +p.v), measured = new Array(table.length).fill(NaN)
+  let last = -1; for (const d of ms.data) { if (d.v === '') continue; const i = Math.round((utc(d.t).getTime() - t0) / step); if (i >= 0 && i < table.length) { measured[i] = +d.v; if (i > last) last = i } }
+  let sum = 0, n = 0; for (let i = Math.max(0, last - 123); i <= last; i++) if (!Number.isNaN(measured[i])) { sum += measured[i] - table[i]; n++ }
+  const surge_m = n ? sum / n : 0
+  const level = (i) => i <= last && !Number.isNaN(measured[i]) ? [measured[i], 'measured'] : i > last && last >= 0 ? [table[i] + surge_m, 'expected'] : [table[i], 'table']
+  return { station, t0, step, table, measured, last, surge_m, level,
+    at(when) { const u = (when.getTime() - t0) / step, i = Math.floor(u); if (i < 0 || i >= table.length - 1) return null
+      const [v0, k0] = level(i), [v1] = level(i + 1); return { level_m: v0 + (v1 - v0) * (u - i), kind: k0 } } }
+}

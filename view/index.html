@@ -16,25 +16,32 @@
   #bar { top: 12px; right: 12px; padding: 6px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
   #bar #burger { width: 34px; height: 30px; padding: 0; font-size: 17px; line-height: 1; align-self: flex-end; }
   #bar #menu { display: flex; flex-direction: column; gap: 4px; min-width: 96px; } #bar #menu button { text-align: left; }
-  #readout { left: 12px; bottom: 12px; padding: 5px 9px; font-size: 12px; font-variant-numeric: tabular-nums; max-width: calc(100vw - 40px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #ctl { left: 12px; top: 72px; max-height: 66vh; overflow: auto; width: min(330px, calc(100vw - 50px)); }
+  #readout { left: 12px; bottom: 12px; padding: 6px 9px; font-size: 12px; font-variant-numeric: tabular-nums; width: min(348px, calc(100vw - 44px)); --bad: #c0392b; }
+  @media (prefers-color-scheme: dark) { #readout { --bad: #ef7a63; } }
+  #rdLine { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; } #rdLine b { font-weight: 600; }
+  #wk { display: block; width: 100%; height: auto; margin: 4px 0 2px; cursor: ew-resize; touch-action: none; }
+  #wk text { font: 9px system-ui, sans-serif; fill: var(--ink); } #wk .bad { fill: var(--bad); } #wk .faint { opacity: .55; }
+  #wkSay { font-size: 11px; line-height: 1.35; } #wkSay .m { opacity: .7; } #wkSay b { font-weight: 600; } #wkSay .bad { color: var(--bad); font-weight: 600; } #wkSay .go { color: var(--accent); cursor: pointer; }
+  #wkSay button { margin: 4px 4px 0 0; padding: 2px 7px; font-size: 11px; }
+  #readout.small #wkSay { display: none; }
+  #ctl { left: 12px; top: 72px; max-height: calc(100vh - 230px); overflow: auto; width: min(330px, calc(100vw - 50px)); }
   #ctl .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
   #ctl label { width: 44px; opacity: .75; }
   #ctl input[type=range] { flex: 1; accent-color: var(--accent); }
   #ctl output { width: 58px; text-align: right; font-variant-numeric: tabular-nums; }
   button { font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 3px; padding: 4px 9px; cursor: pointer; }
   button.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  #credit { left: 12px; top: 72px; max-width: min(420px, calc(100vw - 50px)); max-height: 66vh; overflow: auto; font-size: 11px; }
+  #credit { left: 12px; top: 72px; max-width: min(420px, calc(100vw - 50px)); max-height: calc(100vh - 230px); overflow: auto; font-size: 11px; }
   #credit a { color: inherit; }
-  #news { top: 72px; left: 12px; width: min(360px, calc(100vw - 50px)); max-height: 66vh; overflow: auto; font-size: 12px; }
+  #news { top: 72px; left: 12px; width: min(360px, calc(100vw - 50px)); max-height: calc(100vh - 230px); overflow: auto; font-size: 12px; }
   #news h4 { margin: 0 0 2px; font-size: 13px; } #news .tabs { margin: 6px 0; } #news .it { padding: 6px 0; border-top: 1px solid var(--line); cursor: default; }
   #news .it b { font-weight: 600; } #news .m { opacity: .7; } #news a { color: var(--accent); } #news .go { cursor: pointer; color: var(--accent); }
-  #layers { left: 12px; top: 72px; width: min(340px, calc(100vw - 50px)); max-height: 62vh; overflow: auto; font-size: 12px; }
+  #layers { left: 12px; top: 72px; width: min(340px, calc(100vw - 50px)); max-height: calc(100vh - 230px); overflow: auto; font-size: 12px; }
   #layers label { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; border-top: 1px solid var(--line); } #layers label:first-of-type { border-top: 0; }
   #layers .m, #card .m { opacity: .7; } #layers .sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin: 0 3px 0 6px; }
   #card { right: 12px; bottom: 12px; width: min(320px, calc(100vw - 50px)); max-height: 46vh; overflow: auto; font-size: 12px; }
   #card h4 { margin: 0 0 4px; font-size: 13px; } #card .row { padding: 3px 0; border-top: 1px solid var(--line); } #card .x { float: right; cursor: pointer; opacity: .6; }
-  #play { left: 12px; top: 72px; width: min(360px, calc(100vw - 50px)); max-height: 66vh; overflow: auto; font-size: 12px; }
+  #play { left: 12px; top: 72px; width: min(360px, calc(100vw - 50px)); max-height: calc(100vh - 230px); overflow: auto; font-size: 12px; }
   #play .prop { padding: 7px 0; border-top: 1px solid var(--line); } #play .prop b { font-size: 13px; } #play .m { opacity: .7; }
   #play .yn button { margin: 4px 4px 0 0; } #play .why { margin: 3px 0 0; } #play .why i { font-style: normal; opacity: .7; }
   #dials { bottom: 12px; top: auto; left: 50%; transform: translateX(-50%); display: flex; gap: 14px; padding: 7px 12px; font-size: 11px; }
@@ -52,13 +59,13 @@
   @media (max-width: 720px) { #dials { bottom: auto; top: 62px; gap: 8px; } }
   #card a { color: var(--accent); }
   #wait { top: 50%; left: 50%; transform: translate(-50%,-50%); }
-  @media (max-width: 720px) { #ctl, #credit, #layers, #play, #news { top: auto; bottom: 48px; max-height: 46vh; } #title small { display: none; } }
+  @media (max-width: 720px) { #ctl, #credit, #layers, #play, #news { top: auto; bottom: 126px; max-height: 44vh; } #title small { display: none; } #card { bottom: 126px; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="title" class="panel">The Sausalito Model<small>the town as measured, and propositions to try.</small></div>
-<div id="readout" class="panel" hidden></div>
+<div id="readout" class="panel" hidden><div id="rdLine"></div><svg id="wk" viewBox="0 0 340 74" hidden></svg><div id="wkSay"></div></div>
 <div id="bar" class="panel" hidden><button id="burger" aria-label="menu" aria-expanded="true">☰</button><div id="menu"><button data-p="ctl">view</button><button data-p="play">propositions</button><button data-p="layers">layers</button><button data-p="credit">about</button></div></div>
 <div id="news" class="panel" hidden><span class="go" id="newsBack">‹ layers</span><h4>What the town is talking about</h4><div class="m">Read from local news, notices and public posts by the <a href="https://inhaler.exe.xyz/" target="_blank" rel="noopener">inhaler</a>. Each line is what a source said; nothing is checked for truth.</div><div class="tabs"><button id="tabIssues" class="on">issues</button> <button id="tabDate">around this date</button></div><div id="newsList"></div></div>
 <div id="layers" class="panel" hidden><div class="m" style="margin-bottom:6px">Public maps of the town, read from their publishers when ticked. Click the ground or a building for what is known there.</div><div id="layerList"></div></div>
@@ -80,15 +87,16 @@
   Trees: whatever stands 3 m or more above the ground outside buildings in the lidar points (NOAA's flight of 27 September 2025 over the town and the shore; the US Geological Survey's 2018 survey on the western hills), one body per 7 m of canopy.
   Creeks are OpenStreetMap's, and the fainter drainage lines under "layers" are computed here from the lidar ground. Roads are OpenStreetMap's lines drawn as geometry on the ground, as wide as their lanes on the map or as their class usually is; bridges stand at the height the lidar saw. Buildings, roads and piers: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.
   Building heights: <span id="tagged"></span>. Clock time is Pacific Standard Time.
-  Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. Ground below that level shows wet whether or not the bay can reach it; walls, drains and pumps are not in the picture. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation. Boats: each patch of lidar returns from the flight of 27 September 2025 standing over the water, away from buildings and piers, is drawn as one hull, as long and wide as the patch and lying the way it lies, with a mast as tall as its tallest return or a cabin where it was low. Boats that touch count as one, and which end is the bow is a guess. That flight did not cover the middle of Richardson Bay, so no boats are drawn out there. Floating homes are OpenStreetMap's outlines; where the lidar gave no height theirs is a placeholder. Ferries and buses: Golden Gate Ferry and Golden Gate Transit, drawn where their public timetable puts them at the time on the clock, at a steady speed between stops; they are not tracked, and holiday timetables are left out. Small round marks: places named in the news the inhaler has read.</div>
+  Water: a flat surface at the level of NOAA's San Francisco tide gauge (9414290), measured or predicted. The bay is let onto the 2018 lidar ground cell by cell, so ground below the water level stays dry where higher ground stands between it and the bay. Storm drains, culverts, pumps, walls narrower than 4 m, rain and waves are not in the picture, and work done on the ground since 2018 is not either. The strip at the bottom left shows the gauge over the last four days and the next three: the tide table (thin), what was measured (solid) and what to expect (dashed: the table plus the gap the gauge ran above it over its last 12.4 hours, a rule of thumb). A road counts as closed where the water stands 15 cm deep on it; a building has no dry road out when its nearest road no longer connects, by open roads, to the rest of the network or to a road leaving the map. The gauge is San Francisco's; no correction is made for Richardson Bay. The waves are decoration scaled by the measured wind. Piers are drawn as if all of them float. Sky: the nearest National Weather Service observation. Boats: each patch of lidar returns from the flight of 27 September 2025 standing over the water, away from buildings and piers, is drawn as one hull, as long and wide as the patch and lying the way it lies, with a mast as tall as its tallest return or a cabin where it was low. Boats that touch count as one, and which end is the bow is a guess. That flight did not cover the middle of Richardson Bay, so no boats are drawn out there. Floating homes are OpenStreetMap's outlines; where the lidar gave no height theirs is a placeholder. Ferries and buses: Golden Gate Ferry and Golden Gate Transit, drawn where their public timetable puts them at the time on the clock, at a steady speed between stops; they are not tracked, and holiday timetables are left out. Small round marks: places named in the news the inhaler has read.</div>
 
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
 <script type="module">
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { makeWater } from './lib/water.js'
-import { tideNow, tidePredicted } from './lib/tide.js'
-import { skyNow } from './lib/sky.js'
+import { tideNow, tidePredicted, tideWeek } from './lib/tide.js'
+import { skyNow, alertsNow } from './lib/sky.js'
+import { reachLevels, makeAccess } from './lib/flood.js'
 import { LAYERS, fetchLayer } from './lib/layers.js'
 import { makeAgents } from './lib/agents.js'
 
@@ -243,8 +251,12 @@ function paintBuildings(L) {
     for (let i = first; i < first + walls; i++) { col[i * 3] = w[0]; col[i * 3 + 1] = w[1]; col[i * 3 + 2] = w[2] }
     for (let i = first + walls; i < first + walls + roof; i++) { col[i * 3] = f[0]; col[i * 3 + 1] = f[1]; col[i * 3 + 2] = f[2] }
   }
+  // buildings with no dry road out at the water drawn now are marked in the warning colour
+  if (access && cutLevel != null) bParts.forEach(([first, walls, roof], j) => { if (!(access.cutAt[j] <= cutLevel)) return
+    for (let i = first; i < first + walls + roof; i++) { const u = i < first + walls ? 0.78 : 0.6; col[i * 3] += (CUT[0] - col[i * 3]) * u; col[i * 3 + 1] += (CUT[1] - col[i * 3 + 1]) * u; col[i * 3 + 2] += (CUT[2] - col[i * 3 + 2]) * u } })
   bGeo.attributes.color.needsUpdate = true
 }
+let access = null, cutLevel = null, cutKey = ''; const CUT = [0.78, 0.16, 0.10]
 
 // ---- the water: a sheet at the gauge's level; houseboats and piers ride on it ------------------------
 const water = makeWater(THREE, { width: SX, depth: SY }); scene.add(water)
@@ -315,9 +327,13 @@ const decks = new THREE.Mesh(new THREE.BufferGeometry(), deckMat); decks.castSha
       const c = [[a[0] + ox, a[1] + oy, za], [a[0] - ox, a[1] - oy, za], [b[0] - ox, b[1] - oy, zb], [b[0] + ox, b[1] + oy, zb]]
       for (const k of [0, 1, 2, 0, 2, 3]) pos.push(X(c[k][0]), c[k][2], Z(c[k][1])) } }
   decks.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); decks.geometry.computeVertexNormals() }
-function readout() { const el = document.getElementById('readout'); if (el) el.textContent = `${dayToDate(state.day)}, ${clock(state.hour)} · water ${state.level.toFixed(2)} m${state.live ? ' (measured)' : ''}` }
+const WDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+function readout() { const el = document.getElementById('rdLine'); if (!el) return
+  el.innerHTML = `${typeof moment === 'function' ? WDAY[pst(moment()).getUTCDay()] + ' ' : ''}${dayToDate(state.day)}, ${clock(state.hour)} · water <b>${state.level.toFixed(2)} m</b>${state.kind ? ` (${state.kind})` : ''}`
+  if (typeof sayWeek === 'function') { drawWeek(); sayWeek() } }
 function applyWater() {
-  readout(); if (typeof play !== 'undefined' && play.mask) { floodNow(); if (!document.getElementById('play').hidden || play.yes.size) drawPlay() }
+  if (typeof play !== 'undefined' && play.mask) { floodNow(); if (!document.getElementById('play').hidden || play.yes.size) drawPlay() }
+  readout()
   const level = Math.max(state.level, W.water_m + 0.1), lift = level - W.water_m           // never below the water the lidar saw
   water.set({ level_m: level, wind_ms: state.wind.speed_ms, wind_from_deg: state.wind.from_deg }); piers.position.y = level + 0.5; if (typeof moored !== 'undefined' && moored) moored.position.y = level
   const pos = bGeo.attributes.position.array
@@ -401,7 +417,7 @@ async function goLive() {
   if (!state.live) return
   const words = []
   if (t.error) words.push(`the tide gauge did not answer (${t.error}); the level drawn is not measured`)
-  else { state.level = t.level_m; if (t.wind) state.wind = t.wind
+  else { state.level = t.level_m; state.kind = 'measured'; if (t.wind) state.wind = t.wind
     words.push(`${t.level_m.toFixed(2)} m above NAVD88 at the ${t.name} gauge, ${clock(pst(t.at).getUTCHours() + pst(t.at).getUTCMinutes() / 60)} (measured${t.preliminary ? ', preliminary' : ''})`); if (t.wind) words.push(windWords(t.wind)) }
   if (k.error) words.push('no sky observation')
   else { state.cloud = k.cloud; state.vis = k.visibility_m; if (t.error || !t.wind) { if (k.wind) state.wind = k.wind }
@@ -412,11 +428,71 @@ let asked = 0
 async function goMoment() {
   state.live = false; state.cloud = null; state.vis = null; liveBtn.classList.remove('on'); applySun()
   const mine = ++asked, when = moment(); await new Promise((r) => setTimeout(r, 250)); if (mine !== asked) return
-  try { const t = await tidePredicted(GAUGE, when); if (mine !== asked) return
-    state.level = t.level_m; note.textContent = `${t.level_m.toFixed(2)} m above NAVD88: NOAA's predicted tide for ${dayToDate(state.day)} ${when.getUTCFullYear()}, ${clock(state.hour)}, weather left out. Wind and sky are not known for this moment.`
+  try { const w = week && week.at(when); if (w) { state.level = w.level_m; state.kind = w.kind === 'table' ? 'tide table' : w.kind; note.textContent = weekWords(w); applyWater(); return }
+    const t = await tidePredicted(GAUGE, when); if (mine !== asked) return
+    state.level = t.level_m; state.kind = 'tide table'; note.textContent = `${t.level_m.toFixed(2)} m above NAVD88: NOAA's predicted tide for ${dayToDate(state.day)} ${when.getUTCFullYear()}, ${clock(state.hour)}, weather left out. Wind and sky are not known for this moment.`
   } catch (e) { note.textContent = `no predicted tide (${e.message}); the level drawn is not from the gauge` }
   applyWater()
 }
+
+// ---- the week: what the gauge measured over the last four days and what to expect over the next three --------
+// The picture opens on the present moment, and a flood is a matter of a few hours around each high water. This
+// strip shows the week on one line so the high waters can be seen and gone to.
+let week = null, alerts = []
+const wkEl = document.getElementById('wk'), F2 = (v) => v.toFixed(2), H1 = (h) => h >= 9.95 ? `${Math.round(h)} h` : `${h.toFixed(1)} h`
+const whenWords = (t) => { const p = pst(new Date(t)); return `${WDAY[p.getUTCDay()]} ${clock(p.getUTCHours() + p.getUTCMinutes() / 60)}` }
+const weekWords = (w) => w.kind === 'measured' ? `${F2(w.level_m)} m above NAVD88, measured at the San Francisco gauge.` : w.kind === 'expected' ? `${F2(w.level_m)} m above NAVD88 expected: the tide table plus the ${F2(Math.abs(week.surge_m))} m the gauge has been running ${week.surge_m < 0 ? 'below' : 'above'} it. A rule of thumb, not a forecast.` : `${F2(w.level_m)} m above NAVD88 by NOAA's tide table, weather left out.`
+function goWeek(t) { if (!week) return; const w = week.at(new Date(t)); if (!w) return
+  const p = pst(new Date(t)); state.day = Math.floor((Date.UTC(p.getUTCFullYear(), p.getUTCMonth(), p.getUTCDate()) - Date.UTC(p.getUTCFullYear(), 0, 0)) / 86400000); state.hour = p.getUTCHours() + p.getUTCMinutes() / 60
+  dayIn.value = state.day; hourIn.value = state.hour; state.live = false; state.cloud = null; state.vis = null; liveBtn.classList.remove('on'); asked++
+  state.level = w.level_m; state.kind = w.kind === 'table' ? 'tide table' : w.kind; note.textContent = weekWords(w); if (typeof play !== 'undefined') play.tide = 'now'; applySun(); applyWater() }
+// the week's high waters: the highest reading so far, and the next expected high
+function weekHighs() { let hi = -1, nx = -1; for (let i = 0; i <= week.last; i++) if (!Number.isNaN(week.measured[i]) && (hi < 0 || week.measured[i] > week.measured[hi])) hi = i
+  for (let i = week.last + 1; i < Math.min(week.table.length, week.last + 250); i++) if (nx < 0 || week.table[i] > week.table[nx]) nx = i
+  return { hi, nx, T: (i) => week.t0 + i * week.step } }
+// hours of each day (Pacific Standard Time) with the water at or above a level: [{ day: 'Tue', hours, expected }]
+function hoursAbove(level) { const days = new Map()
+  for (let i = 0; i < week.table.length; i++) { const [v, kind] = week.level(i); if (v < level) continue; const p = pst(new Date(week.t0 + i * week.step)), key = p.toISOString().slice(0, 10); if (!days.has(key)) days.set(key, { day: WDAY[p.getUTCDay()], hours: 0, expected: kind !== 'measured', mid: Date.UTC(p.getUTCFullYear(), p.getUTCMonth(), p.getUTCDate()) + 20 * 3600000 }); days.get(key).hours += 0.1 }
+  return [...days.values()] }
+const hoursWords = (level) => { const d = hoursAbove(level), was = d.filter((x) => !x.expected), will = d.filter((x) => x.expected), list = (a) => a.map((x) => `${x.day} ${H1(x.hours)}`).join(', ')
+  return d.length ? [was.length && list(was), will.length && `expected ${list(will)}`].filter(Boolean).join('; ') : 'not this week' }
+function drawWeek() { if (!week || !access) return; wkEl.removeAttribute('hidden')
+  const n = week.table.length, span = n * week.step, x = (t) => (t - week.t0) / span * 340, F = access.first(25)
+  let top = 2.6; for (let i = 0; i < n; i++) top = Math.max(top, week.level(i)[0] + 0.15); const bot = -0.6, y = (v) => 62 - (v - bot) / (top - bot) * 50
+  const line = (a, b, f) => { let d = ''; for (let i = a; i <= b; i += 2) { const v = f(i); if (v == null || Number.isNaN(v)) continue; d += `${d ? 'L' : 'M'}${x(week.t0 + i * week.step).toFixed(1)},${y(v).toFixed(1)}` } return d }
+  let out = '', run = ''
+  // day lines and names
+  for (let t = Math.ceil((week.t0 - 8 * 3600000) / 86400000) * 86400000 + 8 * 3600000; t < week.t0 + span; t += 86400000) { out += `<line x1="${x(t)}" x2="${x(t)}" y1="10" y2="64" stroke="var(--line)"/>`; if (x(t) < 322) out += `<text x="${x(t) + 3}" y="72" class="faint">${WDAY[pst(new Date(t)).getUTCDay()]}</text>` }
+  // the water above the level at which roads out begin to close
+  if (F < Infinity) { for (let i = 0; i < n; i++) { const v = week.level(i)[0], X0 = x(week.t0 + i * week.step).toFixed(1)
+      if (v >= F) run += `${run ? 'L' : `M${X0},${y(F).toFixed(1)}L`}${X0},${y(v).toFixed(1)}`; else if (run) { out += `<path d="${run}L${X0},${y(F).toFixed(1)}Z" class="bad" opacity=".8"/>`; run = '' } }
+    if (run) out += `<path d="${run}L340,${y(F).toFixed(1)}Z" class="bad" opacity=".8"/>`
+    out += `<line x1="0" x2="340" y1="${y(F)}" y2="${y(F)}" stroke="var(--bad)" stroke-width=".7" stroke-dasharray="3 2"/>`
+    for (const d of hoursAbove(F)) out += `<text x="${Math.min(322, Math.max(18, x(d.mid)))}" y="8" text-anchor="middle" class="bad">${H1(d.hours)}</text>` }
+  out += `<path d="${line(0, n - 1, (i) => week.table[i])}" fill="none" stroke="var(--ink)" stroke-width=".6" opacity=".35"/>`
+  out += `<path d="${line(0, week.last, (i) => week.measured[i])}" fill="none" stroke="var(--ink)" stroke-width="1.3"/>`
+  if (week.last >= 0) out += `<path d="${line(week.last, n - 1, (i) => week.table[i] + week.surge_m)}" fill="none" stroke="var(--ink)" stroke-width="1.1" stroke-dasharray="2.5 2"/>`
+  const now = x(Date.now()), cur = x(moment().getTime())
+  out += `<path d="M${now - 3},64L${now + 3},64L${now},59Z" fill="var(--ink)" opacity=".6"/>`
+  if (cur >= 0 && cur <= 340) out += `<line x1="${cur}" x2="${cur}" y1="10" y2="64" stroke="var(--accent)" stroke-width="1.4"/><circle cx="${cur}" cy="${y(state.level)}" r="2.6" fill="var(--accent)"/>`
+  wkEl.innerHTML = out }
+function sayWeek() { const el = document.getElementById('wkSay'); if (!week || !access || !play.now) { el.innerHTML = ''; return }
+  const f = play.now, F = access.first(25), { hi, nx, T } = weekHighs(), rows = []
+  rows.push(f.closed >= 20 ? `<span class="bad">▲ ${(f.closed / 1000).toFixed(1)} km of road under 15 cm of water or more</span>${f.cut ? ` · <b>${f.cut.toLocaleString('en')} buildings with no dry road out</b>${f.cutFloat ? ` (${f.cutFloat} floating homes)` : ''}, drawn red` : ''}.` : 'No road is closed by water at this level.')
+  const bits = []; if (hi >= 0) { const gap = week.measured[hi] - week.table[hi]; bits.push(`Highest this week: <span class="go" data-go="${T(hi)}">${F2(week.measured[hi])} m, ${whenWords(T(hi))}</span>, ${F2(Math.abs(gap))} m ${gap < 0 ? 'below' : 'above'} the tide table`) }
+  if (nx >= 0) bits.push(`next high: <span class="go" data-go="${T(nx)}">about ${F2(week.table[nx] + week.surge_m)} m, ${whenWords(T(nx))}</span>`)
+  if (bits.length) rows.push(bits.join('; ') + '.')
+  if (F < Infinity) rows.push(`<span class="m">Red: hours above ${F2(F)} m, where the first streets lose their dry road out (computed). Drag the chart to move through the week.</span>`)
+  for (const a of alerts) rows.push(`<span class="go" data-alert="${alerts.indexOf(a)}">▲ ${esc(a.event)}</span> <span class="m">${whenWords(a.from)} to ${whenWords(a.to)} (NWS)</span>`)
+  el.innerHTML = rows.map((r) => `<div>${r}</div>`).join('') + `<button data-go="now" class="${state.live ? 'on' : ''}">now</button>`
+  for (const g of el.querySelectorAll('[data-go]')) g.onclick = () => g.dataset.go === 'now' ? goLive() : goWeek(+g.dataset.go)
+  for (const g of el.querySelectorAll('[data-alert]')) g.onclick = () => { const a = alerts[+g.dataset.alert]; showCard(esc(a.event), [`<span class="m">${esc(a.headline || '')}</span>`, ...a.text.split(/\n\s*\n/).map((t) => esc(t.replace(/\s+/g, ' ')))], `<div class="row m">The National Weather Service's words, not this model's. <a href="${a.url}" target="_blank" rel="noopener">its forecast page</a></div>`) } }
+{ const pick = (e) => { const r = wkEl.getBoundingClientRect(); goWeek(week.t0 + Math.min(0.999, Math.max(0, (e.clientX - r.left) / r.width)) * week.table.length * week.step) }; let held = false
+  wkEl.addEventListener('pointerdown', (e) => { held = true; try { wkEl.setPointerCapture(e.pointerId) } catch {} pick(e) }); wkEl.addEventListener('pointermove', (e) => { if (held) pick(e) }); wkEl.addEventListener('pointerup', () => { held = false }); wkEl.addEventListener('pointercancel', () => { held = false })
+  document.getElementById('rdLine').onclick = () => document.getElementById('readout').classList.toggle('small') }
+if (innerWidth < 720) document.getElementById('readout').classList.add('small')
+const weekReady = tideWeek(GAUGE).then((w) => { week = w; if (typeof TIDES !== 'undefined') weekTide(); readout() }).catch(() => {})
+alertsNow(LAT, LON).then((a) => { alerts = a.filter((x) => /flood|surge|tsunami/i.test(x.event)); readout() }).catch(() => {})
 
 function applyLook() { const L = LOOKS[state.look]; paintGround(L); paintRoads(L); paintBuildings(L); paintTrees(L); gMat.needsUpdate = true; applySun(); for (const b of document.querySelectorAll('#looks button')) b.classList.toggle('on', b.dataset.k === state.look) }
 // the views are written in metres from a fixed point downtown (the window's anchor), so widening the window does not move them
@@ -564,6 +640,9 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     if (b) rows.push(`<b>A ${esc(b.k === 'yes' ? 'building' : b.k.replace(/_/g, ' '))}</b>, ${b.h} m tall <span class="m">(${['a placeholder', "OpenStreetMap's tag", "Microsoft's estimate", 'measured from the 2018 lidar', 'measured from the 2025 lidar'][b.t]}; outline © OpenStreetMap)</span>`)
     if (b && b.k === 'houseboat') { let best = 30, who = null; for (const f of lay.data.get('docks') || []) { const d = Math.hypot(f.point[0] - x, f.point[1] - y); if (d < best) { best = d; who = f.props } }
       if (who) rows.push(`Nearest county address: <b>${esc(String(who.Formatted || '').trim().toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()))}</b> <span class="m">(Marin County address points, ${Math.round(best)} m away)</span>`) } }
+  if (hit === hb && access) { const v = hb.face.a, j = bParts.findIndex(([first, walls, roof]) => v >= first && v < first + walls + roof), c = j >= 0 ? access.cutAt[j] : NaN
+    if (c < Infinity) rows.push(`${c <= Math.max(state.level, W.water_m + 0.1) ? '<b>No dry road out at the water drawn now.</b> ' : ''}Its road out closes when the bay stands at ${c.toFixed(2)} m or more at the gauge${week ? `: ${hoursWords(c)}` : ''} <span class="m">(computed: the nearest road, closed where water stands 15 cm deep)</span>`)
+    else if (c === Infinity) rows.push(`A dry road out stays open up to 4 m of water at the gauge <span class="m">(computed)</span>`) }
   rows.push(`Ground ${groundAt(x, y).toFixed(1)} m above NAVD88 <span class="m">(USGS lidar, 2018)</span>${groundAt(x, y) < state.level ? ` · below the water drawn now (${state.level.toFixed(2)} m)` : ''}`)
   for (const def of LAYERS) for (const f of lay.data.get(def.id) || []) if (f.type === 'area' && x >= f.box[0] && x <= f.box[2] && y >= f.box[1] && y <= f.box[3] && within(f.rings, x, y)) {
     const v = f.props[def.field], more = def.say?.(v, f.props); rows.push(`<b>${esc(def.name)}</b>: ${esc(v ?? '')}${more ? ` <span class="m">(${esc(more)})</span>` : ''}`); break }
@@ -578,17 +657,17 @@ renderer.domElement.addEventListener('pointerup', (e) => {
 // to cell, so low ground the bay cannot reach stays dry and a raised road holds it back. Everything else that moves
 // a dial is a rule of thumb written by hand, and each line says which it is. Propositions to say yes or no to,
 // to show that choices have consequences; not a forecast.
-const play = { yes: new Set(), tide: 'now', ground: elev.slice(), wet: new Uint8Array(nx * ny), mask: null, base: null }
+const play = { yes: new Set(), tide: 'now', ground: elev.slice(), wet: new Uint8Array(nx * ny), mask: null, base: null, thr: null }
+const SEA = W.water_m + 0.07, DRIVE = new Set(['motorway', 'motorway_link', 'primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'residential', 'unclassified', 'service'])
+access = makeAccess({ roads: town.roads.filter((r) => DRIVE.has(r.k)).map((r) => ({ p: r.p, fixed: !!(r.z || r.u) })), nx, ny, res: RES, sea: SEA,
+  places: bParts.map((part) => { const b = part[6]; return { x: b.p.reduce((a, v) => a + v[0], 0) / b.p.length, y: b.p.reduce((a, v) => a + v[1], 0) / b.p.length, reach: b.k === 'houseboat' ? 220 : 150 } }) })
+// the level at which the bay reaches each cell, and at which each building's road out closes; again when the ground changes
+function reflood() { play.thr = reachLevels(play.ground, nx, ny, SEA); access.update(play.ground, play.thr); cutKey = '' }
+reflood()
 play.mask = new THREE.DataTexture(new Uint8Array(nx * ny), nx, ny, THREE.RedFormat); play.mask.magFilter = play.mask.minFilter = THREE.LinearFilter
 function floodNow() {
-  const g = play.ground, wet = play.wet, level = Math.max(state.level, W.water_m + 0.1), sea = W.water_m + 0.07; wet.fill(0)
-  const stack = []; for (let k = 0; k < g.length; k++) if (elev[k] <= sea) { wet[k] = 1; stack.push(k) }           // the bay as the lidar saw it
-  while (stack.length) { const k = stack.pop(), i = k % nx
-    if (i > 0 && !wet[k - 1] && g[k - 1] < level) { wet[k - 1] = 1; stack.push(k - 1) }
-    if (i < nx - 1 && !wet[k + 1] && g[k + 1] < level) { wet[k + 1] = 1; stack.push(k + 1) }
-    if (k >= nx && !wet[k - nx] && g[k - nx] < level) { wet[k - nx] = 1; stack.push(k - nx) }
-    if (k < g.length - nx && !wet[k + nx] && g[k + nx] < level) { wet[k + nx] = 1; stack.push(k + nx) } }
-  const d = play.mask.image.data; for (let k = 0; k < d.length; k++) d[k] = wet[k] ? 255 : 0
+  const wet = play.wet, thr = play.thr, level = Math.max(state.level, W.water_m + 0.1), sea = SEA
+  const d = play.mask.image.data; for (let k = 0; k < d.length; k++) { const w = thr[k] < level; wet[k] = w ? 1 : 0; d[k] = w ? 255 : 0 }   // wet where the bay reaches at this level
   play.mask.needsUpdate = true; water.set({ mask: play.mask })
   // what is wet that should not be: buildings that stand on the ground, and road that is not a bridge
   const cell = (x, y) => Math.min(ny - 1, Math.max(0, Math.floor((SY - y) / RES))) * nx + Math.min(nx - 1, Math.max(0, Math.floor(x / RES)))
@@ -596,14 +675,19 @@ function floodNow() {
   let buildingsWet = 0, roadWet = 0, tallWet = 0
   for (const part of bParts) { const b = part[6]; if (b.k === 'houseboat' || b.gone) continue; if (b.p.some((v) => isWet(v[0], v[1]))) { buildingsWet++; if (b.raised) tallWet++ } }
   for (const r of town.roads) { if (r.z || r.u || !ROAD_W[r.k]) continue; for (let i = 0; i + 1 < r.p.length; i++) { const a = r.p[i], b = r.p[i + 1]; if (isWet((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) roadWet += Math.hypot(b[0] - a[0], b[1] - a[1]) } }
-  play.now = { buildingsWet, roadWet: Math.round(roadWet), tallWet, level }; return play.now
+  let cut = 0, cutFloat = 0; bParts.forEach((part, j) => { if (access.cutAt[j] <= level && !part[6].gone) { cut++; if (part[4] === 'houseboat') cutFloat++ } })
+  const key = `${cut}:${state.look}`; cutLevel = level; if (key !== cutKey) { cutKey = key; paintBuildings(LOOKS[state.look]) }
+  play.now = { buildingsWet, roadWet: Math.round(roadWet), tallWet, level, closed: Math.round(access.closed(level)), cut, cutFloat }; return play.now
 }
 const TIDES = {
   now:  { name: "today's tide", set: () => null },
-  king: { name: 'a king tide', level: 2.22, say: "2.22 m above NAVD88: NOAA's predicted high for 24 December 2026 at the San Francisco gauge. The weather can add to it." },
+  week: { name: "this week's highest", level: 0, say: '' },
+  king: { name: "December's king tide", level: 2.22, say: "2.22 m above NAVD88: NOAA's tide table for 24 December 2026 at the San Francisco gauge. The table leaves out the weather, and a storm can add several tenths of a metre." },
   k30:  { name: 'the same in a higher sea, +30 cm', level: 2.52, say: 'The December king tide with 30 cm of sea-level rise added. The 30 cm is an assumption, about what the state asks cities to plan for by mid-century.' },
   k100: { name: '+1 m', level: 3.22, say: 'The December king tide with a metre of sea-level rise added: an assumption, a late-century case.' },
 }
+function weekTide() { const { hi, T } = weekHighs(); if (hi < 0) return; TIDES.week.level = week.measured[hi]; TIDES.week.say = `${F2(week.measured[hi])} m above NAVD88: measured at the San Francisco gauge, ${whenWords(T(hi))}, ${F2(Math.abs(week.measured[hi] - week.table[hi]))} m ${week.measured[hi] < week.table[hi] ? 'below' : 'above'} the tide table.` }
+if (week) weekTide()
 const area = (p) => { let a = 0; for (let i = 0; i < p.length; i++) { const q0 = p[i], q1 = p[(i + 1) % p.length]; a += q0[0] * q1[1] - q1[0] * q0[1] } return Math.abs(a / 2) }
 const setTop = (part, top) => { const pos = bGeo.attributes.position.array, [first, walls, roof, , , old] = part; for (let i = first; i < first + walls + roof; i++) if (Math.abs(pos[i * 3 + 1] - old) < 0.01) pos[i * 3 + 1] = top; part[5] = top; bGeo.attributes.position.needsUpdate = true }
 const road5 = town.roads.find((r) => /gate 5/i.test(r.n || '')), mid = (r) => r.p[Math.floor(r.p.length / 2)]
@@ -661,6 +745,7 @@ function score() {
     if (f.tallWet) why.push(['safety', -1, `${f.tallWet} of those raised buildings stand in the water at this tide.`, true]) }
   const s = -Math.min(3, Math.round((f.buildingsWet / 25 + f.roadWet / 800) * 10) / 10); v.safety += s
   why.unshift(['safety', s, `At ${f.level.toFixed(2)} m, ${f.buildingsWet} buildings and ${f.roadWet.toLocaleString('en')} m of road are in the water.`, true])
+  if (f.cut) { const c = -Math.min(2, Math.round(f.cut / 150 * 10) / 10); v.life += c; why.splice(1, 0, ['life', c, `${f.cut.toLocaleString('en')} buildings have no dry road out at this level${f.cutFloat ? `, ${f.cutFloat} of them floating homes` : ''}.`, true]) }
   return { v, why, f }
 }
 function drawPlay() {
@@ -668,7 +753,7 @@ function drawPlay() {
   dials.innerHTML = Object.keys(DIALS).map((k) => { const x = Math.max(-3, Math.min(3, v[k])); return `<div class="d">${DIALS[k]}<div class="bar"><span style="left:${x < 0 ? 50 + x / 3 * 50 : 50}%;width:${Math.abs(x) / 3 * 50}%;background:${x < 0 ? '#c0392b' : '#2e8b57'}"></span><div class="mid"></div></div></div>` }).join('')
   dials.hidden = q.has('bare') || (!play.yes.size && play.tide === 'now' && document.getElementById('play').hidden)
   host.innerHTML = `<div class="m">Propositions to say yes or no to, and what would follow. One thing is computed: where the water goes on the measured ground. The rest are rules of thumb or judgements, and each line says which.</div>
-    <div class="prop"><b>The tide</b><div class="yn">${Object.keys(TIDES).map((k) => `<button data-t="${k}" class="${play.tide === k ? 'on' : ''}">${esc(TIDES[k].name)}</button>`).join('')}</div><div class="why m">${esc(TIDES[play.tide].say || 'The level measured or predicted for the date and time on the clock.')}</div></div>
+    <div class="prop"><b>The tide</b><div class="yn">${Object.keys(TIDES).filter((k) => k === 'now' || TIDES[k].level).map((k) => `<button data-t="${k}" class="${play.tide === k ? 'on' : ''}">${esc(TIDES[k].name)}</button>`).join('')}</div><div class="why m">${esc(TIDES[play.tide].say || 'The level measured or predicted for the date and time on the clock.')}</div></div>
     ${PROPS.map((p) => `<div class="prop"><b>${esc(p.ask)}</b><div class="m">${esc(p.about)}</div><div class="yn"><button data-y="${p.id}" class="${play.yes.has(p.id) ? 'on' : ''}">yes</button><button data-n="${p.id}" class="${play.yes.has(p.id) ? '' : 'on'}">no</button></div></div>`).join('')}
     <div class="prop"><b>What follows</b>${why.map(([k, n, text, counted]) => `<div class="why">${counted ? '●' : '○'} <i>${DIALS[k]} ${n > 0 ? '+' : n < 0 ? '−' : ''}</i> ${esc(text)}</div>`).join('')}<div class="why m">● counted or computed from the map and the ground · ○ a rule of thumb written by hand</div></div>
     <div class="prop"><button id="playReset">put everything back</button></div>`
@@ -679,9 +764,9 @@ function drawPlay() {
   for (const c of document.querySelectorAll('.chip')) c.classList.toggle('yes', play.yes.has(c.dataset.id))
   renderer.shadowMap.needsUpdate = true; dirty = true
 }
-function say(id, on, quiet) { const p = PROPS.find((x) => x.id === id); if (!p || play.yes.has(id) === on) return; on ? play.yes.add(id) : play.yes.delete(id); p.apply(on); if (!quiet) drawPlay()
+function say(id, on, quiet) { const p = PROPS.find((x) => x.id === id); if (!p || play.yes.has(id) === on) return; on ? play.yes.add(id) : play.yes.delete(id); p.apply(on); if (id === 'road') reflood(); if (!quiet) drawPlay()
   if (id === 'tall') shipReady.then(() => { p.apply(play.yes.has('tall')); drawPlay() }) }      // the Marinship is known only once the zoning map has answered
-function setTide(k) { play.tide = k; if (TIDES[k].level) { state.live = false; state.level = TIDES[k].level; note.textContent = TIDES[k].say; applyWater() } else goLive(); drawPlay() }
+function setTide(k) { play.tide = k; if (TIDES[k].level) { state.live = false; liveBtn.classList.remove('on'); state.kind = 'chosen'; state.level = TIDES[k].level; note.textContent = TIDES[k].say; applyWater() } else goLive(); drawPlay() }
 // the propositions stand on the map as small chips where their issue is; a click opens the question
 { const host = document.getElementById('chips'); for (const p of PROPS) { if (!p.at) continue; const c = document.createElement('div'); c.className = 'chip'; c.dataset.id = p.id; c.textContent = p.short; c.onclick = () => { toggle('play', true); drawPlay(); document.querySelector(`#play [data-y="${p.id}"]`)?.scrollIntoView({ block: 'center' }) }; host.append(c) } }
 const chipAt = new THREE.Vector3()
@@ -712,7 +797,8 @@ if (q.has('pos') && q.has('at')) { const v = (k) => q.get(k).split(',').map(Numb
 if (q.has('level')) note.textContent = `${state.level.toFixed(2)} m above NAVD88, set in the address for a test`
 else if (q.has('day') || q.has('hour')) goMoment(); else goLive()
 
-const shipReady = markShipyard(); floodNow()
+const shipReady = markShipyard(); floodNow(); readout()
+if (q.has('when')) weekReady.then(() => { if (!week) return; const { hi, nx, T } = weekHighs(), k = q.get('when'); goWeek(k === 'high' ? T(hi) : k === 'next' ? T(nx) : Date.parse(k)) })   // a moment of this week from the address: high, next, or a time
 layerOn(LAYERS.find((d) => d.id === 'docks')).catch(() => {})                 // dock addresses, read quietly so a click on a floating home can name it
 if (q.has('yes')) setTimeout(() => { if (q.get('tide')) setTide(q.get('tide')); for (const id of q.get('yes').split(',')) say(id, true) }, 3500)   // propositions from the address, for tests and links
 document.getElementById('wait').remove()
@@ -721,6 +807,7 @@ const PANELS = ['ctl', 'play', 'layers', 'news', 'credit'], bar = document.getEl
 function toggle(id, on = document.getElementById(id).hidden) {
   if (on) for (const p of PANELS) document.getElementById(p).hidden = true                                         // one panel at a time, all in one place
   document.getElementById(id).hidden = !on
+  document.getElementById('readout').classList.toggle('small', innerWidth < 720 || PANELS.some((p) => !document.getElementById(p).hidden))   // an open panel takes the room; the strip keeps its line and chart
   for (const b of bar.querySelectorAll('#menu button')) b.classList.toggle('on', !document.getElementById(b.dataset.p).hidden || (b.dataset.p === 'layers' && !document.getElementById('news').hidden))
   dirty = true
   if (id === 'play') drawPlay()

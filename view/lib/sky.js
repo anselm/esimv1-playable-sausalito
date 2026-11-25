@@ -29,3 +29,10 @@ export async function skyNow(lat, lon, tryStations = 10) {
   if (!pick) throw new Error('no weather station near this point answered')
   return pick
 }
+
+// Warnings and advisories in force or announced for a point, from the same service.
+// -> [{ event, headline, from: Date, to: Date, text, url }]
+export async function alertsNow(lat, lon) {
+  const j = await get(`https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}`)
+  return (j.features || []).map((f) => f.properties).map((p) => ({ event: p.event, headline: p.headline, from: new Date(p.onset || p.effective), to: new Date(p.ends || p.expires), text: p.description || '', url: `https://forecast.weather.gov/MapClick.php?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}` }))
+}

@@ -27,7 +27,8 @@ tray of changes, no split screen. `devlog/20261123-propositions.md`.
 3. [x] Tides to try: today, this winter's king tide, the same with sea-level rise.
 4. [x] First propositions with something to see: raise Gate 5 Road; remove the floating homes; cut down the trees; four storeys in the Marinship; ban tourists.
 5. [x] Four dials (homes, money, nature, safety) that move, each with the reason in a sentence, marked as computed or as a rule of thumb.
-5b. [ ] Check the computed flood against where water was reported on 22 November; draw a raised road as raised.
+5b. [x] The computed flood checked against the reports of 22 and 23 November; the week of the flood on the page, with hours of closed road per day and buildings with no dry road out (`devlog/20261124-the-week-of-the-flood.md`).
+5b2. [ ] From that entry: read the Waldo Point sensor; use the Weather Service's forecast height; rain behind a high tide; place the unplaced flood reports; draw closed roads as closed; draw a raised road as raised.
 5c. [x] Hydrology: mapped creeks and drainage lines computed from the lidar ground (`devlog/20261123-hydrology.md`). Next: rain in the flood, running down these lines.
 6. [ ] More propositions: a tide gate at the Coloma Street canal, a wall along the Marinship, the 724 homes on the listed sites, close Bridgeway to cars, pave the hills.
 7. [ ] Things that move: a ferry, cars, people, so a change like "ban tourists" can be seen.
