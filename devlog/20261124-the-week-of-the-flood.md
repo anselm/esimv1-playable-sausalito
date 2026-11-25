@@ -76,3 +76,24 @@ Nothing above was checked street by street, and nobody who was there has looked 
 - Rain: water arriving down the drainage lines while the tide holds the outfalls shut.
 - Give the unplaced flood reports a place, or list them in the strip.
 - Draw closed roads as closed, not only the buildings behind them.
+
+## Later the same evening: it still looked like nothing
+
+Anselm, after the first pass:
+
+> But they say they have extreme flooding - none of our displays indicate anything going on
+> Why is there such a large delta between our business as usual map and what I hear from people there ?
+
+Two faults of display, both fixed:
+
+- The page still opened on the present moment, a low tide at dusk. It now opens on the latest high water when that high closed roads and the present level does not, and says so in the strip's first line with a link back to now. `?flood=0` turns that off.
+- At high water the flooded streets could hardly be seen. Shallow water over land was drawn as the same dark sheet as the bay, 10 to 40 cm of it over grey road. Flooded ground now has its own lit colour (`floodMesh`), stronger where deeper.
+
+What the display now shows honestly is how small the computed flood is: a fringe along the shore, Gate 5 and Gate 6 roads, the 101 ramps. The rest of the gap is in the model, not the display:
+
+- No rain. This week's reports pair the tides with heavy rain, and a tide above the outfalls holds that rain in the streets.
+- No drains. Bay water comes up through storm drains onto ground the surface route never reaches.
+- No waves or local wind set-up, and the level is San Francisco's.
+- The picture is of where water stands, not of what it does: a closed ramp, a home reached only by wading, a business that cannot open.
+
+We also do not know where the person he heard from lives, or whether it is inside the window.

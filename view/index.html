@@ -410,7 +410,7 @@ function clock(h) { const hh = Math.floor(h) % 24, mm = Math.round((h - Math.flo
 const note = document.getElementById('waterNote'), liveBtn = document.getElementById('live')
 const pst = (d) => new Date(d.getTime() - 8 * 3600000), moment = () => new Date(Date.UTC(new Date().getUTCFullYear(), 0, state.day, 0, 0) + (state.hour + 8) * 3600000)
 const windWords = (w) => `wind ${w.speed_ms.toFixed(1)} m/s from ${Math.round(w.from_deg)}°`
-async function goLive() {
+async function goLive() { autoShown = false
   const p = pst(new Date()); state.day = Math.floor((Date.UTC(p.getUTCFullYear(), p.getUTCMonth(), p.getUTCDate()) - Date.UTC(p.getUTCFullYear(), 0, 0)) / 86400000); state.hour = p.getUTCHours() + p.getUTCMinutes() / 60
   dayIn.value = state.day; hourIn.value = state.hour; state.live = true; liveBtn.classList.add('on'); note.textContent = 'asking the gauge…'; applySun()
   const [t, k] = await Promise.all([tideNow(GAUGE).catch((e) => ({ error: e.message })), skyNow(LAT, LON).catch((e) => ({ error: e.message }))])
@@ -438,11 +438,11 @@ async function goMoment() {
 // ---- the week: what the gauge measured over the last four days and what to expect over the next three --------
 // The picture opens on the present moment, and a flood is a matter of a few hours around each high water. This
 // strip shows the week on one line so the high waters can be seen and gone to.
-let week = null, alerts = []
+let week = null, alerts = [], autoShown = false
 const wkEl = document.getElementById('wk'), F2 = (v) => v.toFixed(2), H1 = (h) => h >= 9.95 ? `${Math.round(h)} h` : `${h.toFixed(1)} h`
 const whenWords = (t) => { const p = pst(new Date(t)); return `${WDAY[p.getUTCDay()]} ${clock(p.getUTCHours() + p.getUTCMinutes() / 60)}` }
 const weekWords = (w) => w.kind === 'measured' ? `${F2(w.level_m)} m above NAVD88, measured at the San Francisco gauge.` : w.kind === 'expected' ? `${F2(w.level_m)} m above NAVD88 expected: the tide table plus the ${F2(Math.abs(week.surge_m))} m the gauge has been running ${week.surge_m < 0 ? 'below' : 'above'} it. A rule of thumb, not a forecast.` : `${F2(w.level_m)} m above NAVD88 by NOAA's tide table, weather left out.`
-function goWeek(t) { if (!week) return; const w = week.at(new Date(t)); if (!w) return
+function goWeek(t) { if (!week) return; const w = week.at(new Date(t)); if (!w) return; autoShown = false
   const p = pst(new Date(t)); state.day = Math.floor((Date.UTC(p.getUTCFullYear(), p.getUTCMonth(), p.getUTCDate()) - Date.UTC(p.getUTCFullYear(), 0, 0)) / 86400000); state.hour = p.getUTCHours() + p.getUTCMinutes() / 60
   dayIn.value = state.day; hourIn.value = state.hour; state.live = false; state.cloud = null; state.vis = null; liveBtn.classList.remove('on'); asked++
   state.level = w.level_m; state.kind = w.kind === 'table' ? 'tide table' : w.kind; note.textContent = weekWords(w); if (typeof play !== 'undefined') play.tide = 'now'; applySun(); applyWater() }
@@ -478,6 +478,7 @@ function drawWeek() { if (!week || !access) return; wkEl.removeAttribute('hidden
   wkEl.innerHTML = out }
 function sayWeek() { const el = document.getElementById('wkSay'); if (!week || !access || !play.now) { el.innerHTML = ''; return }
   const f = play.now, F = access.first(25), { hi, nx, T } = weekHighs(), rows = []
+  if (autoShown) rows.push(`<b>Showing ${whenWords(moment().getTime())}, the latest high water, not the present moment.</b> <span class="go" data-go="now">show now</span>`)
   rows.push(f.closed >= 20 ? `<span class="bad">▲ ${(f.closed / 1000).toFixed(1)} km of road under 15 cm of water or more</span>${f.cut ? ` · <b>${f.cut.toLocaleString('en')} buildings with no dry road out</b>${f.cutFloat ? ` (${f.cutFloat} floating homes)` : ''}, drawn red` : ''}.` : 'No road is closed by water at this level.')
   const bits = []; if (hi >= 0) { const gap = week.measured[hi] - week.table[hi]; bits.push(`Highest this week: <span class="go" data-go="${T(hi)}">${F2(week.measured[hi])} m, ${whenWords(T(hi))}</span>, ${F2(Math.abs(gap))} m ${gap < 0 ? 'below' : 'above'} the tide table`) }
   if (nx >= 0) bits.push(`next high: <span class="go" data-go="${T(nx)}">about ${F2(week.table[nx] + week.surge_m)} m, ${whenWords(T(nx))}</span>`)
@@ -662,12 +663,18 @@ const SEA = W.water_m + 0.07, DRIVE = new Set(['motorway', 'motorway_link', 'pri
 access = makeAccess({ roads: town.roads.filter((r) => DRIVE.has(r.k)).map((r) => ({ p: r.p, fixed: !!(r.z || r.u) })), nx, ny, res: RES, sea: SEA,
   places: bParts.map((part) => { const b = part[6]; return { x: b.p.reduce((a, v) => a + v[0], 0) / b.p.length, y: b.p.reduce((a, v) => a + v[1], 0) / b.p.length, reach: b.k === 'houseboat' ? 220 : 150 } }) })
 // the level at which the bay reaches each cell, and at which each building's road out closes; again when the ground changes
+// flooded ground has its own colour: a lit sheet a little above the ground, so shallow water on a street reads as a flood and not as bay
+const floodTex = new THREE.DataTexture(new Uint8Array(nx * ny * 4), nx, ny, THREE.RGBAFormat); floodTex.magFilter = floodTex.minFilter = THREE.LinearFilter; floodTex.colorSpace = THREE.SRGBColorSpace
+const floodMesh = new THREE.Mesh(gGeo, new THREE.MeshBasicMaterial({ map: floodTex, transparent: true, depthWrite: false })); floodMesh.position.y = 0.6; floodMesh.renderOrder = 8; scene.add(floodMesh)
 function reflood() { play.thr = reachLevels(play.ground, nx, ny, SEA); access.update(play.ground, play.thr); cutKey = '' }
 reflood()
 play.mask = new THREE.DataTexture(new Uint8Array(nx * ny), nx, ny, THREE.RedFormat); play.mask.magFilter = play.mask.minFilter = THREE.LinearFilter
 function floodNow() {
   const wet = play.wet, thr = play.thr, level = Math.max(state.level, W.water_m + 0.1), sea = SEA
-  const d = play.mask.image.data; for (let k = 0; k < d.length; k++) { const w = thr[k] < level; wet[k] = w ? 1 : 0; d[k] = w ? 255 : 0 }   // wet where the bay reaches at this level
+  const d = play.mask.image.data, fd = floodTex.image.data, g = play.ground
+  for (let j = 0, k = 0; j < ny; j++) for (let i = 0, o = ((ny - 1 - j) * nx) * 4; i < nx; i++, k++, o += 4) { const w = thr[k] < level; wet[k] = w ? 1 : 0; d[k] = w ? 255 : 0   // wet where the bay reaches at this level
+    if (w && elev[k] > sea + 0.6) { fd[o] = 25; fd[o + 1] = 190; fd[o + 2] = 245; fd[o + 3] = Math.min(235, 150 + (level - g[k]) * 170) } else fd[o + 3] = 0 }
+  floodTex.needsUpdate = true
   play.mask.needsUpdate = true; water.set({ mask: play.mask })
   // what is wet that should not be: buildings that stand on the ground, and road that is not a bridge
   const cell = (x, y) => Math.min(ny - 1, Math.max(0, Math.floor((SY - y) / RES))) * nx + Math.min(nx - 1, Math.max(0, Math.floor(x / RES)))
@@ -798,6 +805,10 @@ if (q.has('level')) note.textContent = `${state.level.toFixed(2)} m above NAVD88
 else if (q.has('day') || q.has('hour')) goMoment(); else goLive()
 
 const shipReady = markShipyard(); floodNow(); readout()
+// when the latest high water closed roads, the page opens on it: a flood lasts a few hours a day and the present moment is usually between them
+if (!q.has('when') && !q.has('level') && !q.has('day') && !q.has('hour') && q.get('flood') !== '0') weekReady.then(() => { if (!week || week.last < 0) return; const F = access.first(25); let hi = -1
+  for (let i = Math.max(0, week.last - 240); i <= week.last; i++) if (!Number.isNaN(week.measured[i]) && (hi < 0 || week.measured[i] > week.measured[hi])) hi = i
+  if (hi >= 0 && week.measured[hi] >= F && week.measured[week.last] < F) { goWeek(week.t0 + hi * week.step); autoShown = true; readout() } })
 if (q.has('when')) weekReady.then(() => { if (!week) return; const { hi, nx, T } = weekHighs(), k = q.get('when'); goWeek(k === 'high' ? T(hi) : k === 'next' ? T(nx) : Date.parse(k)) })   // a moment of this week from the address: high, next, or a time
 layerOn(LAYERS.find((d) => d.id === 'docks')).catch(() => {})                 // dock addresses, read quietly so a click on a floating home can name it
 if (q.has('yes')) setTimeout(() => { if (q.get('tide')) setTide(q.get('tide')); for (const id of q.get('yes').split(',')) say(id, true) }, 3500)   // propositions from the address, for tests and links
