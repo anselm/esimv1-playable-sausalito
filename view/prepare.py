@@ -3,12 +3,14 @@
 
 Needs GDAL's command-line tools and numpy. Inputs (see cache/README.md for where they come from):
   cache/dem_*.tif   USGS 3DEP one-metre elevation tiles (public domain)
-  cache/osm_raw.json  an Overpass answer for buildings, highways and piers (OpenStreetMap, ODbL)
+  the town's buildings, roads, shore works and waterways, read from the data warehouse (data.earthlight.cloud;
+                    OpenStreetMap, ODbL, with Microsoft's height estimates, CDLA Permissive 2.0)
 Outputs:
   data/ground.bin   elevation, little-endian int16 decimetres, row-major from the north edge
   data/town.json    the window, buildings, roads and piers in metres east and north of the window's south-west corner
-Heights: a building's height is its OpenStreetMap `height` or `building:levels` x 3 m where tagged (t = 1), else
-Microsoft's estimate for the footprint at the same place (t = 2), else a placeholder by kind (t = 0).
+Heights: a building arrives from the warehouse with one height: its OpenStreetMap `height` or `building:levels`
+x 3 m where tagged (t = 1), else Microsoft's estimate for the footprint at the same place (t = 2), else a guess from
+its neighbours or its kind and size (t = 0). The lidar then replaces what it can measure (t = 3 or 4).
 """
 import json, subprocess, sys, os
 import numpy as np
@@ -32,83 +34,65 @@ g = np.fromfile(os.path.join(CACHE, "town.bin"), dtype="<f4").reshape(ny, nx)
 water = float(np.min(g[g > -9999])); g[g <= -9999] = water
 np.round(g * 10).astype("<i2").tofile(os.path.join(OUT, "ground.bin"))
 
-# OpenStreetMap: project every vertex in one call
-d = json.load(open(os.path.join(CACHE, "osm_raw.json")))
-ways = [e for e in d["elements"] if e["type"] == "way" and len(e.get("geometry", [])) >= 2]
-pts = "\n".join(f'{p["lon"]} {p["lat"]}' for e in ways for p in e["geometry"])
+# ---- the town's features, from the data warehouse ---------------------------------------------------------
+# https://data.earthlight.cloud (made with github.com/anselm/esimv1-data) holds this window's buildings, roads,
+# shore works and waterways as products with fixed addresses; a product is never changed once made, so the four
+# lines below fix what this script reads. The buildings are OpenStreetMap's outlines, each already given one
+# height and a note of where it came from: the map's own `height` or `building:levels` tag (t = 1), Microsoft's
+# estimate for the footprint at the same place (t = 2), or a guess from neighbouring buildings or the building's
+# kind and size (t = 0). The lidar below then replaces whichever of those it can measure. ESIM_DATA_STORE may
+# name another copy of the store, a folder or an address.
+import gzip, urllib.request
+STORE = os.environ.get("ESIM_DATA_STORE", "https://data.earthlight.cloud").rstrip("/")
+PRODUCTS = {
+    "buildings": "buildings/massing/sausalito/2026-11-27/buildings.geojson.gz",
+    "roads": "roads/osm/sausalito/2026-11-28/roads.geojson.gz",
+    "shore": "shore/osm/sausalito/2026-11-28/shore.geojson.gz",
+    "water": "water/osm/sausalito/2026-11-28/water.geojson.gz",
+}
+def product(key):
+    rel = PRODUCTS[key]; kept = os.path.join(CACHE, "warehouse", rel.replace("/", "_"))
+    if not os.path.exists(kept):
+        os.makedirs(os.path.dirname(kept), exist_ok=True)
+        if STORE.startswith("http"): data = urllib.request.urlopen(urllib.request.Request(STORE + "/" + rel, headers={"User-Agent": "sausalito-model-prepare/1"}), timeout=120).read()
+        else: data = open(os.path.join(STORE, rel), "rb").read()
+        open(kept, "wb").write(data)
+    return json.load(gzip.open(kept))["features"]
+feats = {k: product(k) for k in PRODUCTS}
+def line_of(f): return f["geometry"]["coordinates"][0] if f["geometry"]["type"] == "Polygon" else f["geometry"]["coordinates"]
+# project every vertex in one call
+allf = [f for k in PRODUCTS for f in feats[k]]
+pts = "\n".join(f"{p[0]} {p[1]}" for f in allf for p in line_of(f))
 out = subprocess.run("gdaltransform -s_srs EPSG:4326 -t_srs EPSG:26910", shell=True, input=pts, capture_output=True, text=True, check=True).stdout.split("\n")
 it = iter(out)
-def num(s):
-    try: return float(str(s).split()[0].replace("m", ""))
-    except Exception: return None
-PLACEHOLDER = {"houseboat": 4.5, "shed": 3, "garage": 3, "garages": 3, "roof": 3, "carport": 3, "commercial": 8, "retail": 6, "industrial": 9, "warehouse": 9, "apartments": 10, "hotel": 10, "church": 10, "religious": 10, "school": 7}
-buildings, roads, piers, creeks, tagged = [], [], [], [], 0
-for e in ways:
+def local(f):
     xy = []
-    for _ in e["geometry"]:
-        a = next(it).split(); xy.append([round(float(a[0]) - E0, 1), round(float(a[1]) - N0, 1)])
-    t = e.get("tags", {})
-    inside = any(0 <= x <= E1 - E0 and 0 <= y <= N1 - N0 for x, y in xy)
-    if not inside: continue
-    if "building" in t:
-        if len(xy) < 4: continue
-        h = num(t.get("height")); lv = num(t.get("building:levels"))
-        if h is None and lv is not None: h = lv * 3.0
-        known = h is not None
-        if not known: h = PLACEHOLDER.get(t["building"], 6.5)
-        tagged += known
-        buildings.append({"k": t["building"], "h": round(h, 1), "t": 1 if known else 0, "p": xy[:-1] if xy[0] == xy[-1] else xy})
-    elif "highway" in t:
-        r = {"k": t["highway"], "n": t.get("name", ""), "p": xy}
-        ln = num(t.get("lanes"))
-        if ln: r["l"] = int(ln)                                   # lanes, where the map says
-        if t.get("oneway") == "yes": r["o"] = 1
-        if t.get("bridge") and t.get("bridge") != "no": r["b"] = 1
-        if t.get("tunnel") and t.get("tunnel") != "no": r["u"] = 1
-        roads.append(r)
-    elif t.get("man_made") == "pier": piers.append({"area": xy[0] == xy[-1] and len(xy) > 3, "p": xy})
-    elif "waterway" in t: creeks.append({"k": t["waterway"], "n": t.get("name", ""), "u": 1 if t.get("tunnel") in ("yes", "culvert") else 0, "p": xy})
-# ---- heights from Microsoft's Global ML Building Footprints (CDLA Permissive 2.0) -----------------------------
-# cache/ms_qk023010203.csv.gz is the quadkey file covering the window (one GeoJSON feature per line, height in
-# metres, -1 where Microsoft has none; listed in its dataset-links.csv). Microsoft estimated these heights; the
-# method and date are not stated per building. An OpenStreetMap building takes the height of the Microsoft
-# footprint that contains its centre, or failing that the nearest one within 12 m.
-import gzip
-ms_path = os.path.join(CACHE, "ms_qk023010203.csv.gz"); from_ms = 0
-if os.path.exists(ms_path):
-    ms = []
-    for line in gzip.open(ms_path, "rt"):
-        f = json.loads(line); hgt = f["properties"].get("height", -1); ring = f["geometry"]["coordinates"][0]
-        if hgt is None or hgt <= 0: continue
-        lon, lat = ring[0]
-        if not (-122.52 <= lon <= -122.455 and 37.83 <= lat <= 37.885): continue
-        ms.append((hgt, ring))
-    pts = "\n".join(f"{x} {y}" for _, ring in ms for x, y in ring)
-    proj = iter(subprocess.run("gdaltransform -s_srs EPSG:4326 -t_srs EPSG:26910", shell=True, input=pts, capture_output=True, text=True, check=True).stdout.split("\n"))
-    polys = []
-    for hgt, ring in ms:
-        xy = []
-        for _ in ring: a = next(proj).split(); xy.append((float(a[0]) - E0, float(a[1]) - N0))
-        polys.append((hgt, xy, sum(p[0] for p in xy) / len(xy), sum(p[1] for p in xy) / len(xy)))
-    grid = {}
-    for i, (_, xy, cx, cy) in enumerate(polys): grid.setdefault((int(cx // 50), int(cy // 50)), []).append(i)
-    def inside(x, y, xy):
-        c = False; n = len(xy)
-        for i in range(n):
-            x1, y1 = xy[i]; x2, y2 = xy[(i + 1) % n]
-            if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1: c = not c
-        return c
-    for b in buildings:
-        if b["t"]: continue
-        cx = sum(p[0] for p in b["p"]) / len(b["p"]); cy = sum(p[1] for p in b["p"]) / len(b["p"])
-        near = [i for dx in (-1, 0, 1) for dy in (-1, 0, 1) for i in grid.get((int(cx // 50) + dx, int(cy // 50) + dy), [])]
-        hit = next((i for i in near if inside(cx, cy, polys[i][1])), None)
-        if hit is None and near:
-            j = min(near, key=lambda i: (polys[i][2] - cx) ** 2 + (polys[i][3] - cy) ** 2)
-            if (polys[j][2] - cx) ** 2 + (polys[j][3] - cy) ** 2 <= 144: hit = j
-        if hit is not None: b["h"] = round(float(polys[hit][0]), 1); b["t"] = 2; from_ms += 1
-    hs = sorted(b["h"] for b in buildings if b["t"] == 2)
-    print(f"heights: {from_ms} of {len(buildings)} from Microsoft ({len(polys)} Microsoft footprints with a height in the window); median {hs[len(hs)//2]} m, 95th percentile {hs[int(len(hs)*.95)]} m, tallest {hs[-1]} m")
+    for _ in line_of(f): a = next(it).split(); xy.append([round(float(a[0]) - E0, 1), round(float(a[1]) - N0, 1)])
+    return xy
+def inside(xy): return any(0 <= x <= E1 - E0 and 0 <= y <= N1 - N0 for x, y in xy)
+T = {"survey": 1, "tag": 1, "levels": 1, "ml": 2}
+buildings, roads, piers, creeks = [], [], [], []
+for f in feats["buildings"]:
+    xy = local(f); q = f["properties"]
+    if not inside(xy) or len(xy) < 4 or q.get("height_m") is None: continue
+    buildings.append({"k": q.get("kind") or "yes", "h": round(q["height_m"], 1), "t": T.get(q.get("height_source"), 0), "p": xy[:-1] if xy[0] == xy[-1] else xy})
+for f in feats["roads"]:
+    xy = local(f); q = f["properties"]
+    if not inside(xy): continue
+    r = {"k": q["class"], "n": q.get("name") or "", "p": xy}
+    if q.get("lanes"): r["l"] = int(q["lanes"])               # lanes, where the map says
+    if q.get("oneway"): r["o"] = 1
+    if q.get("bridge"): r["b"] = 1
+    if q.get("tunnel"): r["u"] = 1
+    roads.append(r)
+for f in feats["shore"]:
+    xy = local(f)
+    if inside(xy) and f["properties"]["kind"] == "pier": piers.append({"area": xy[0] == xy[-1] and len(xy) > 3, "p": xy})
+for f in feats["water"]:
+    xy = local(f); q = f["properties"]
+    if inside(xy): creeks.append({"k": q["kind"], "n": q.get("name") or "", "u": 1 if q.get("tunnel") else 0, "p": xy})
+tagged = sum(b["t"] == 1 for b in buildings); from_ms = sum(b["t"] == 2 for b in buildings)
+print(f"warehouse: {len(buildings)} buildings ({tagged} with a tagged height, {from_ms} with Microsoft's, {len(buildings) - tagged - from_ms} guessed), {len(roads)} roads, {len(piers)} piers, {len(creeks)} waterways")
 
 # ---- heights measured from the lidar point cloud ----------------------------------------------------------
 # cache/dsm1.bin is the highest lidar return in each one-metre cell (view/tools/lidar_surface.py, from the
@@ -228,7 +212,7 @@ for k in sorted(np.nonzero(chan & ~has_up)[0], key=lambda c: -acc[c]):
 print(f"drainage: {len(drains)} lines where 2 ha or more drain through; the largest carries {max(d['a'] for d in drains):.0f} ha; {len(creeks)} mapped waterways ({sum(c['u'] for c in creeks)} in culverts or tunnels)")
 
 json.dump({"creeks": creeks, "drains": drains, "window": {"epsg": 26910, "e0": E0, "n0": N0, "e1": E1, "n1": N1, "res": RES, "nx": nx, "ny": ny, "water_m": round(water, 2), "anchor": WIN["anchor"], "south": WIN["south"], "west": WIN["west"], "north": WIN["north"], "east": WIN["east"]},
-           "osm_base": d.get("osm3s", {}).get("timestamp_osm_base"), "heights_tagged": tagged, "heights_microsoft": from_ms, "heights_lidar": from_lidar, "heights_lidar_2025": sum(b["t"] == 4 for b in buildings), "water_2025_m": None if 'water25' not in dir() or water25 is None else round(water25, 2),
+           "osm_base": "2026-11-28", "products": PRODUCTS, "heights_tagged": tagged, "heights_microsoft": from_ms, "heights_lidar": from_lidar, "heights_lidar_2025": sum(b["t"] == 4 for b in buildings), "water_2025_m": None if 'water25' not in dir() or water25 is None else round(water25, 2),
            "buildings": buildings, "roads": roads, "piers": piers}, open(os.path.join(OUT, "town.json"), "w"), separators=(",", ":"))
 print(f"ground {nx}x{ny} at {RES} m, water level {water:.2f} m; {len(buildings)} buildings ({tagged} with a tagged height), {len(roads)} roads, {len(piers)} piers")
 
